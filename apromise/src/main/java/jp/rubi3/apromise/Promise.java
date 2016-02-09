@@ -1,7 +1,6 @@
 package jp.rubi3.apromise;
 
 import android.os.Handler;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
@@ -30,40 +29,6 @@ public final class Promise<D> {
      */
     public static Promise rejected(@Nullable final Exception object) {
         return new Promise().resolve(object != null ? object : new NullPointerException("rejected with null"));
-    }
-
-    /**
-     * dispatch
-     *
-     * @param dispatch
-     * @param <N>
-     * @return
-     */
-    public static <N> Promise<N> dispatch(@NonNull final Dispatch<N> dispatch) {
-        return dispatchOn(new Handler(), dispatch);
-    }
-
-    /**
-     * dispatch
-     *
-     * @param handler
-     * @param dispatch
-     * @param <N>
-     * @return
-     */
-    public static <N> Promise<N> dispatchOn(@NonNull final Handler handler, @NonNull final Dispatch<N> dispatch) {
-        final Promise promise = new Promise();
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    promise.resolve(dispatch.dispatch());
-                } catch (Exception e) {
-                    promise.resolve(e);
-                }
-            }
-        });
-        return promise;
     }
 
     private interface Resolver {
@@ -151,7 +116,11 @@ public final class Promise<D> {
         this.handler = handler;
     }
 
-    synchronized Promise<D> resolve(final Object object) {
+    public synchronized Promise<D> reject(Exception e) {
+        return resolve(e);
+    }
+
+    public synchronized Promise<D> resolve(final Object object) {
         if (!isPending()) {
             throw new RuntimeException("already resolved/rejected");
         }

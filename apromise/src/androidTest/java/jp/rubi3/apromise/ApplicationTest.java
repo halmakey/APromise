@@ -76,12 +76,9 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override
             public void run() {
-                Promise.dispatch(new Dispatch<StringBuilder>() {
-                    @Override
-                    public StringBuilder dispatch() throws Exception {
-                        return builder.append('1');
-                    }
-                }).then(new Callback<StringBuilder>() {
+                Promise.resolved(
+                        builder.append('1')
+                ).then(new Callback<StringBuilder>() {
                     @Override
                     public void callback(StringBuilder result) {
                         builder.append('2');
