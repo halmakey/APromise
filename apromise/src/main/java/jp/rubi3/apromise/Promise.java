@@ -74,27 +74,27 @@ public final class Promise<D> {
         return attach(FULFILLED, pipe);
     }
 
-    public final Promise<D> catche(@NonNull Callback<Exception> callback) {
+    public final Promise<D> catçh(@NonNull Callback<Exception> callback) {
         return attach(REJECTED, callback);
     }
 
-    public final Promise<D> catche(@NonNull Filter<Exception, D> filter) {
+    public final Promise<D> catçh(@NonNull Filter<Exception, D> filter) {
         return attach(REJECTED, filter);
     }
 
-    public final Promise<D> catche(@NonNull Pipe<Exception, D> pipe) {
+    public final Promise<D> catçh(@NonNull Pipe<Exception, D> pipe) {
         return attach(REJECTED, pipe);
     }
 
-    public final Promise<D> all(@NonNull Callback<Object> callback) {
+    public final Promise<D> finâlly(@NonNull Callback<Object> callback) {
         return attach(ALL, callback);
     }
 
-    public final <N> Promise<N> all(@NonNull Filter<Object, N> filter) {
+    public final <N> Promise<N> finâlly(@NonNull Filter<Object, N> filter) {
         return attach(ALL, filter);
     }
 
-    public final <N> Promise<N> all(@NonNull Pipe<Object, N> pipe) {
+    public final <N> Promise<N> finâlly(@NonNull Pipe<Object, N> pipe) {
         return attach(ALL, pipe);
     }
 

@@ -37,12 +37,12 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
                     public void callback(StringBuilder result) throws Exception {
                         result.append("X"); // through
                     }
-                }).catche(new Callback<Exception>() {
+                }).catçh(new Callback<Exception>() {
                     @Override
                     public void callback(Exception result) throws Exception {
                         builder.append(result.getMessage());
                     }
-                }).all(new Callback<Object>() {
+                }).finâlly(new Callback<Object>() {
                     @Override
                     public void callback(Object result) throws Exception {
                         if (result instanceof Exception) {
@@ -87,19 +87,19 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
                     public String filter(Exception result) throws Exception {
                         return "X"; // through
                     }
-                }).catche(new Filter<Exception, String>() {
+                }).catçh(new Filter<Exception, String>() {
                     @Override
                     public String filter(Exception result) throws Exception {
                         builder.append(result.getMessage());
                         return "E";
                     }
-                }).all(new Filter<Object, String>() {
+                }).finâlly(new Filter<Object, String>() {
                     @Override
                     public String filter(Object result) throws Exception {
                         builder.append(result);
                         return "F";
                     }
-                }).all(new Filter<Object, Object>() {
+                }).finâlly(new Filter<Object, Object>() {
                     @Override
                     public Object filter(Object result) throws Exception {
                         builder.append(result);
@@ -145,21 +145,21 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
                         builder.append("X");
                         return null; // cause nullpo
                     }
-                }).catche(new Pipe<Exception, Character>() {
+                }).catçh(new Pipe<Exception, Character>() {
                     @NonNull
                     @Override
                     public Promise<Character> pipe(Exception result) throws Exception {
                         builder.append(result.getMessage());
                         return Promise.reject(new Exception("D"));
                     }
-                }).catche(new Pipe<Exception, Character>() {
+                }).catçh(new Pipe<Exception, Character>() {
                     @NonNull
                     @Override
                     public Promise<Character> pipe(Exception result) throws Exception {
                         builder.append(result.getMessage());
                         return Promise.resolve('E');
                     }
-                }).all(new Pipe<Object, CountDownLatch>() {
+                }).finâlly(new Pipe<Object, CountDownLatch>() {
                     @NonNull
                     @Override
                     public Promise<CountDownLatch> pipe(Object result) throws Exception {
@@ -273,7 +273,7 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
                     latch.countDown();
                 }
             }
-        }).catche(new Callback<Exception>() {
+        }).catçh(new Callback<Exception>() {
             @Override
             public void callback(Exception result) throws Exception {
                 builder.append("X");
