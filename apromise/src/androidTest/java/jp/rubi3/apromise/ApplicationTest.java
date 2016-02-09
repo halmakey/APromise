@@ -7,6 +7,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.test.ApplicationTestCase;
 
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -284,6 +285,83 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
         latch.await();
 
         assertEquals("A", builder.toString());
+    }
+
+    public void testAllDone() throws Exception {
+        final StringBuilder builder = new StringBuilder();
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        final Handler handler = new Handler(Looper.getMainLooper());
+
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                Promise.all(
+                        Promise.resolve("A"),
+                        Promise.resolve("B"),
+                        new Promise<String>(new Function() {
+                            @Override
+                            public void function(final Resolver resolver) throws Exception {
+                                handler.postDelayed(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        resolver.resolve("C");
+                                    }
+                                }, 1000);
+                            }
+                        })
+                ).then(new Callback<List<String>>() {
+                    @Override
+                    public void callback(List<String> result) throws Exception {
+                        for (String one : result) {
+                            builder.append(one);
+                        }
+                        latch.countDown();
+                    }
+                });
+            }
+        });
+
+        latch.await();
+        assertEquals("ABC", builder.toString());
+    }
+
+    public void testAllOneFail() throws Exception {
+        final StringBuilder builder = new StringBuilder();
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        final Handler handler = new Handler(Looper.getMainLooper());
+
+        handler.post(new Runnable() {
+            @Override
+             public void run() {
+                 Promise.all(
+                         Promise.resolve("X"),
+                         Promise.resolve("X"),
+                         new Promise<String>(new Function() {
+                             @Override
+                             public void function(final Resolver resolver) throws Exception {
+                                 handler.postDelayed(new Runnable() {
+                                     @Override
+                                     public void run() {
+                                         resolver.reject(new RuntimeException("ABC"));
+                                     }
+                                 }, 1000);
+                             }
+                         })
+                 ).catçh(new Callback<Exception>() {
+                     @Override
+                     public void callback(Exception result) throws Exception {
+                         builder.append(result.getMessage());
+                         latch.countDown();
+                     }
+                 });
+             }
+        });
+
+        latch.await();
+        assertEquals("ABC", builder.toString());
+
     }
 
     public void testResult() throws Exception {

@@ -32,6 +32,37 @@ public final class Promise<D> {
         return new Promise().innerReject(object);
     }
 
+    public static <D> Promise<List<D>> all(@NonNull final Promise<D>... promises) {
+        return all(new Handler(), promises);
+    }
+
+    public static <D> Promise<List<D>> all(@NonNull Handler handler, @NonNull final Promise<D>... promises) {
+        final Promise<List<D>> promise = new Promise<>(handler);
+        for (Promise<D> one : promises) {
+            one.finâlly(new Callback<Object>() {
+                @Override
+                public void callback(Object result) throws Exception {
+                    if (!promise.isPending()) {
+                        return;
+                    }
+                    if (result instanceof Exception) {
+                        promise.innerResolve(result);
+                        return;
+                    }
+                    ArrayList<D> results = new ArrayList<>(promises.length);
+                    for (Promise one : promises) {
+                        if (one.isPending()) {
+                            return;
+                        }
+                        results.add((D) one.result);
+                    }
+                    promise.innerResolve(results);
+                }
+            });
+        }
+        return promise;
+    }
+
     private interface Chain {
         void chain(Object object);
     }
