@@ -24,7 +24,7 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override
             public void run() {
-                Promise.resolved(
+                Promise.resolve(
                         builder.append("A")
                 ).then(new Callback<StringBuilder>() {
                     @Override
@@ -67,7 +67,7 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override
             public void run() {
-                Promise.resolved(
+                Promise.resolve(
                         builder.append("A")
                 ).then(new Filter<StringBuilder, String>() {
                     @Override
@@ -122,14 +122,14 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
         handler.post(new Runnable() {
             @Override
             public void run() {
-                Promise.resolved(
+                Promise.resolve(
                         "A"
                 ).then(new Pipe<String, String>() {
                     @NonNull
                     @Override
                     public Promise<String> pipe(String result) throws Exception {
                         builder.append(result);
-                        return Promise.resolved("B");
+                        return Promise.resolve("B");
                     }
                 }).then(new Pipe<String, String>() {
                     @NonNull
@@ -150,14 +150,14 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
                     @Override
                     public Promise<Character> pipe(Exception result) throws Exception {
                         builder.append(result.getMessage());
-                        return Promise.rejected(new Exception("D"));
+                        return Promise.reject(new Exception("D"));
                     }
                 }).catche(new Pipe<Exception, Character>() {
                     @NonNull
                     @Override
                     public Promise<Character> pipe(Exception result) throws Exception {
                         builder.append(result.getMessage());
-                        return Promise.resolved('E');
+                        return Promise.resolve('E');
                     }
                 }).all(new Pipe<Object, CountDownLatch>() {
                     @NonNull
@@ -165,7 +165,7 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
                     public Promise<CountDownLatch> pipe(Object result) throws Exception {
                         builder.append(result);
                         latch.countDown();
-                        return Promise.resolved(latch);
+                        return Promise.resolve(latch);
                     }
                 });
             }
@@ -176,22 +176,28 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
     }
 
     public void testResolved() throws Exception {
-        assertTrue(Promise.resolved(null).isFulfilled());
-        assertTrue(Promise.rejected(null).isRejected());
+        assertTrue(Promise.resolve(null).isFulfilled());
+        assertTrue(Promise.reject(null).isRejected());
     }
 
     public void testStatus() throws Exception {
-        Promise pending = new Promise();
+        Handler handler = new Handler(Looper.getMainLooper());
+
+        Promise pending = new Promise(handler, new Function() {
+            @Override
+            public void function(Resolver resolver) throws Exception {
+            }
+        });
         assertTrue(pending.isPending());
         assertFalse(pending.isFulfilled());
         assertFalse(pending.isRejected());
 
-        Promise fulfilled = new Promise().resolve(null);
+        Promise fulfilled = Promise.resolve(null);
         assertFalse(fulfilled.isPending());
         assertTrue(fulfilled.isFulfilled());
         assertFalse(fulfilled.isRejected());
 
-        Promise rejected = new Promise().reject(new Exception("Rejection"));
+        Promise rejected = Promise.reject(null);
         assertFalse(rejected.isPending());
         assertFalse(rejected.isFulfilled());
         assertTrue(rejected.isRejected());
@@ -201,11 +207,11 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
         final StringBuilder builder = new StringBuilder();
         final CountDownLatch latch = new CountDownLatch(1);
 
-        Handler handler = new Handler(Looper.getMainLooper());
+        final Handler handler = new Handler(Looper.getMainLooper());
         handler.post(new Runnable() {
             @Override
             public void run() {
-                Promise resolved = Promise.resolved(null);
+                Promise resolved = Promise.resolve(null);
                 resolved.then(new Callback() {
                     @Override
                     public void callback(Object result) throws Exception {
@@ -219,7 +225,17 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
                     }
                 });
 
-                final Promise<Character> pending = new Promise<>();
+                final Promise<Character> pending = new Promise<>(new Function() {
+                    @Override
+                    public void function(final Resolver resolver) throws Exception {
+                        handler.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                resolver.resolve('D');
+                            }
+                        }, 1000);
+                    }
+                });
                 pending.then(new Callback<Character>() {
                     @Override
                     public void callback(Character result) throws Exception {
@@ -230,11 +246,6 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
                     @Override
                     public void callback(Character result) throws Exception {
                         builder.append(result);
-                    }
-                });
-                pending.resolve('D').then(new Callback<Character>() {
-                    @Override
-                    public void callback(Character result) throws Exception {
                         latch.countDown();
                     }
                 });
@@ -246,8 +257,37 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
         assertEquals("ABCD", builder.toString());
     }
 
+    public void testFunction() throws Exception {
+        final StringBuilder builder = new StringBuilder();
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        final Handler handler = new Handler(Looper.getMainLooper());
+        new Promise<>(handler, new Function() {
+            @Override
+            public void function(Resolver resolver) throws Exception {
+                try {
+                    resolver.resolve(null);
+                    resolver.resolve(null); // throws IllegalStateException
+                } catch (IllegalStateException ise) {
+                    builder.append("A");
+                    latch.countDown();
+                }
+            }
+        }).catche(new Callback<Exception>() {
+            @Override
+            public void callback(Exception result) throws Exception {
+                builder.append("X");
+                latch.countDown();
+            }
+        });
+
+        latch.await();
+
+        assertEquals("A", builder.toString());
+    }
+
     public void testResult() throws Exception {
-        Promise promise = new Promise().resolve("testResult");
+        Promise promise = Promise.resolve("testResult");
         assertEquals("testResult", promise.result());
     }
 }

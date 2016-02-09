@@ -10,7 +10,7 @@ public interface Pipe<D, N> {
      * pipe
      *
      * @param result
-     * @return promise resolved when returned promise will be resolved.
+     * @return promise resolve when returned promise will be resolve.
      * @throws Exception to reject
      */
     @NonNull

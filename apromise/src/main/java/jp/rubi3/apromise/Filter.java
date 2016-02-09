@@ -10,7 +10,7 @@ public interface Filter<D, N> {
      * filter
      *
      * @param result
-     * @return next result object. rejected if Exception object
+     * @return next result object. reject if Exception object
      * @throws Exception to reject
      */
     @Nullable
