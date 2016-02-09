@@ -39,7 +39,7 @@ public final class Promise<D> {
     public static <D> Promise<List<D>> all(@NonNull Handler handler, @NonNull final Promise<D>... promises) {
         final Promise<List<D>> promise = new Promise<>(handler);
         for (Promise<D> one : promises) {
-            one.finâlly(new Callback<Object>() {
+            one.always(new Callback<Object>() {
                 @Override
                 public void callback(Object result) throws Exception {
                     if (!promise.isPending()) {
@@ -105,27 +105,27 @@ public final class Promise<D> {
         return attach(FULFILLED, pipe);
     }
 
-    public final Promise<D> catçh(@NonNull Callback<Exception> callback) {
+    public final Promise<D> fail(@NonNull Callback<Exception> callback) {
         return attach(REJECTED, callback);
     }
 
-    public final Promise<D> catçh(@NonNull Filter<Exception, D> filter) {
+    public final Promise<D> fail(@NonNull Filter<Exception, D> filter) {
         return attach(REJECTED, filter);
     }
 
-    public final Promise<D> catçh(@NonNull Pipe<Exception, D> pipe) {
+    public final Promise<D> fail(@NonNull Pipe<Exception, D> pipe) {
         return attach(REJECTED, pipe);
     }
 
-    public final Promise<D> finâlly(@NonNull Callback<Object> callback) {
+    public final Promise<D> always(@NonNull Callback<Object> callback) {
         return attach(ALL, callback);
     }
 
-    public final <N> Promise<N> finâlly(@NonNull Filter<Object, N> filter) {
+    public final <N> Promise<N> always(@NonNull Filter<Object, N> filter) {
         return attach(ALL, filter);
     }
 
-    public final <N> Promise<N> finâlly(@NonNull Pipe<Object, N> pipe) {
+    public final <N> Promise<N> always(@NonNull Pipe<Object, N> pipe) {
         return attach(ALL, pipe);
     }
 

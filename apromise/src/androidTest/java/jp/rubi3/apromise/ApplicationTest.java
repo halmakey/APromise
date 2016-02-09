@@ -38,12 +38,12 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
                     public void callback(StringBuilder result) throws Exception {
                         result.append("X"); // through
                     }
-                }).catçh(new Callback<Exception>() {
+                }).fail(new Callback<Exception>() {
                     @Override
                     public void callback(Exception result) throws Exception {
                         builder.append(result.getMessage());
                     }
-                }).finâlly(new Callback<Object>() {
+                }).always(new Callback<Object>() {
                     @Override
                     public void callback(Object result) throws Exception {
                         if (result instanceof Exception) {
@@ -88,19 +88,19 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
                     public String filter(Exception result) throws Exception {
                         return "X"; // through
                     }
-                }).catçh(new Filter<Exception, String>() {
+                }).fail(new Filter<Exception, String>() {
                     @Override
                     public String filter(Exception result) throws Exception {
                         builder.append(result.getMessage());
                         return "E";
                     }
-                }).finâlly(new Filter<Object, String>() {
+                }).always(new Filter<Object, String>() {
                     @Override
                     public String filter(Object result) throws Exception {
                         builder.append(result);
                         return "F";
                     }
-                }).finâlly(new Filter<Object, Object>() {
+                }).always(new Filter<Object, Object>() {
                     @Override
                     public Object filter(Object result) throws Exception {
                         builder.append(result);
@@ -146,21 +146,21 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
                         builder.append("X");
                         return null; // cause nullpo
                     }
-                }).catçh(new Pipe<Exception, Character>() {
+                }).fail(new Pipe<Exception, Character>() {
                     @NonNull
                     @Override
                     public Promise<Character> pipe(Exception result) throws Exception {
                         builder.append(result.getMessage());
                         return Promise.reject(new Exception("D"));
                     }
-                }).catçh(new Pipe<Exception, Character>() {
+                }).fail(new Pipe<Exception, Character>() {
                     @NonNull
                     @Override
                     public Promise<Character> pipe(Exception result) throws Exception {
                         builder.append(result.getMessage());
                         return Promise.resolve('E');
                     }
-                }).finâlly(new Pipe<Object, CountDownLatch>() {
+                }).always(new Pipe<Object, CountDownLatch>() {
                     @NonNull
                     @Override
                     public Promise<CountDownLatch> pipe(Object result) throws Exception {
@@ -274,7 +274,7 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
                     latch.countDown();
                 }
             }
-        }).catçh(new Callback<Exception>() {
+        }).fail(new Callback<Exception>() {
             @Override
             public void callback(Exception result) throws Exception {
                 builder.append("X");
@@ -349,7 +349,7 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
                                  }, 1000);
                              }
                          })
-                 ).catçh(new Callback<Exception>() {
+                 ).fail(new Callback<Exception>() {
                      @Override
                      public void callback(Exception result) throws Exception {
                          builder.append(result.getMessage());
