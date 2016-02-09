@@ -28,7 +28,7 @@ public final class Promise<D> {
      * @return returns rejected promise with NullPointerException instance if object is null.
      */
     public static Promise rejected(@Nullable final Exception object) {
-        return new Promise().resolve(object != null ? object : new NullPointerException("rejected with null"));
+        return new Promise().reject(object);
     }
 
     private interface Resolver {
@@ -117,7 +117,7 @@ public final class Promise<D> {
     }
 
     public synchronized Promise<D> reject(Exception e) {
-        return resolve(e);
+        return resolve(e != null ? e : new NullPointerException("rejected with null"));
     }
 
     public synchronized Promise<D> resolve(final Object object) {
