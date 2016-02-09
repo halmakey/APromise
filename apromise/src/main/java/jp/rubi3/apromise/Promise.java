@@ -1,6 +1,7 @@
 package jp.rubi3.apromise;
 
 import android.os.Handler;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
@@ -38,6 +39,7 @@ public final class Promise<D> {
     private static final int PENDING      = 0;
     private static final int FULFILLED    = 1;
     private static final int REJECTED     = 2;
+    private static final int ALL          = 3;
 
     private Handler handler;
     private int status;
@@ -60,52 +62,40 @@ public final class Promise<D> {
         return result;
     }
 
-    public final Promise<D> then(Callback<D> callback) {
-        return attach(callback, null);
+    public final Promise<D> then(@NonNull Callback<D> callback) {
+        return attach(FULFILLED, callback);
     }
 
-    public final <N> Promise<N> then(Filter<D, N> filter) {
-        return attach(filter, null);
+    public final <N> Promise<N> then(@NonNull Filter<D, N> filter) {
+        return attach(FULFILLED, filter);
     }
 
-    public final <N> Promise<N> then(Pipe<D, N> pipe) {
-        return attach(pipe, null);
+    public final <N> Promise<N> then(@NonNull Pipe<D, N> pipe) {
+        return attach(FULFILLED, pipe);
     }
 
-    public final Promise<D> then(final Callback<D> fulfilled, final Callback<Exception> rejected) {
-        return attach(fulfilled, rejected);
+    public final Promise<D> catche(@NonNull Callback<Exception> callback) {
+        return attach(REJECTED, callback);
     }
 
-    public final <N> Promise<N> then(final Filter<D, N> fulfilled, final Filter<Exception, N> rejected) {
-        return attach(fulfilled, rejected);
+    public final Promise<D> catche(@NonNull Filter<Exception, D> filter) {
+        return attach(REJECTED, filter);
     }
 
-    public final <N> Promise<N> then(final Pipe<D, N> fulfilled, final Pipe<Exception, N> rejected) {
-        return attach(fulfilled, rejected);
+    public final Promise<D> catche(@NonNull Pipe<Exception, D> pipe) {
+        return attach(REJECTED, pipe);
     }
 
-    public final Promise<D> catche(Callback<Exception> callback) {
-        return attach(null, callback);
+    public final Promise<D> all(@NonNull Callback<Object> callback) {
+        return attach(ALL, callback);
     }
 
-    public final Promise<D> catche(Filter<Exception, D> filter) {
-        return attach(null, filter);
+    public final <N> Promise<N> all(@NonNull Filter<Object, N> filter) {
+        return attach(ALL, filter);
     }
 
-    public final Promise<D> catche(Pipe<Exception, D> pipe) {
-        return attach(null, pipe);
-    }
-
-    public final Promise<D> all(Callback<Object> callback) {
-        return attach(callback, callback);
-    }
-
-    public final <N> Promise<N> all(Filter<Object, N> filter) {
-        return attach(filter, filter);
-    }
-
-    public final <N> Promise<N> all(Pipe<Object, N> pipe) {
-        return attach(pipe, pipe);
+    public final <N> Promise<N> all(@NonNull Pipe<Object, N> pipe) {
+        return attach(ALL, pipe);
     }
 
     public Promise() {
@@ -157,18 +147,15 @@ public final class Promise<D> {
         children.add(resolver);
     }
 
-    private Promise attach(final Callback fulfilled, final Callback rejected) {
+    private Promise attach(final int mask, final Callback callback) {
         final Promise promise = new Promise(handler);
         attach(new Resolver() {
             @Override
             public void resolve(Object object) {
                 try {
-                    Callback callback = (object instanceof Exception) ? rejected : fulfilled;
-                    if (callback == null) {
-                        promise.resolve(object);
-                        return;
+                    if ((status & mask) != 0) {
+                        callback.callback(object);
                     }
-                    callback.callback(object);
                     promise.resolve(object);
                 } catch (Exception e) {
                     promise.resolve(e);
@@ -178,14 +165,13 @@ public final class Promise<D> {
         return promise;
     }
 
-    private Promise attach(final Filter fulfilled, final Filter rejected) {
+    private Promise attach(final int mask, final Filter filter) {
         final Promise promise = new Promise(handler);
         attach(new Resolver() {
             @Override
             public void resolve(Object object) {
                 try {
-                    Filter filter = (object instanceof Exception) ? rejected : fulfilled;
-                    if (filter == null) {
+                    if ((status & mask) == 0) {
                         promise.resolve(object);
                         return;
                     }
@@ -198,14 +184,13 @@ public final class Promise<D> {
         return promise;
     }
 
-    private Promise attach(final Pipe fulfilled, final Pipe rejected) {
+    private Promise attach(final int mask, final Pipe pipe) {
         final Promise promise = new Promise(handler);
         attach(new Resolver() {
             @Override
             public void resolve(Object object) {
                 try {
-                    final Pipe pipe = object instanceof Exception ? rejected : fulfilled;
-                    if (pipe == null) {
+                    if ((status & mask) == 0) {
                         promise.resolve(object);
                         return;
                     }
