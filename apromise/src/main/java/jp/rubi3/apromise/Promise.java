@@ -46,7 +46,7 @@ public final class Promise<D> {
                         return;
                     }
                     if (result instanceof Exception) {
-                        promise.innerResolve(result);
+                        promise.innerReject((Exception) result);
                         return;
                     }
                     ArrayList<D> results = new ArrayList<>(promises.length);
@@ -56,15 +56,16 @@ public final class Promise<D> {
                         }
                         results.add((D) one.result);
                     }
-                    promise.innerResolve(results);
+                    promise.innerFulfill(results);
                 }
             });
         }
         return promise;
     }
 
-    private interface Chain {
-        void chain(Object object);
+    private interface Chain<D> {
+        void onFulfilled(D result);
+        void onRejected(Exception exception);
     }
 
     private static final int PENDING      = 0;
@@ -74,8 +75,9 @@ public final class Promise<D> {
 
     private Handler handler;
     private int status;
-    private Object result;
-    private List<Chain> children;
+    private D result;
+    private Exception exception;
+    private List<Chain<D>> children;
 
     public final boolean isPending() {
         return status == PENDING;
@@ -89,8 +91,12 @@ public final class Promise<D> {
         return status == REJECTED;
     }
 
-    public final Object result() {
+    public final D getResult() {
         return result;
+    }
+
+    public Exception getException() {
+        return exception;
     }
 
     public final Promise<D> then(@NonNull Callback<D> callback) {
@@ -114,46 +120,40 @@ public final class Promise<D> {
     }
 
     public final Promise<D> fail(@NonNull Pipe<Exception, D> pipe) {
-        return attach(REJECTED, pipe);
+        return attach(null, pipe);
     }
 
     public final Promise<D> always(@NonNull Callback<Object> callback) {
-        return attach(ALL, callback);
+        return attach(callback, callback);
     }
 
     public final <N> Promise<N> always(@NonNull Filter<Object, N> filter) {
-        return attach(ALL, filter);
+        return attach(filter, filter);
     }
 
     public final <N> Promise<N> always(@NonNull Pipe<Object, N> pipe) {
-        return attach(ALL, pipe);
+        return attach(pipe, pipe);
     }
 
-    public Promise(@NonNull Function function) {
+    public Promise(@NonNull Function<D> function) {
         this(new Handler(), function);
     }
 
-    public Promise(@NonNull Handler handler,@NonNull final Function function) {
+    public Promise(@NonNull Handler handler,@NonNull final Function<D> function) {
         this(handler);
         this.handler.post(new Runnable() {
             @Override
             public void run() {
                 try {
-                    function.function(new jp.rubi3.apromise.Resolver() {
+                    function.function(new Resolver<D>() {
                         @Override
-                        public void resolve(Object result) {
-                            if (!isPending()) {
-                                throw new IllegalStateException("already resolved");
-                            }
-                            Promise.this.innerResolve(result);
+                        public void fulfill(D result) {
+                            Promise.this.innerFulfill(result);
                         }
 
                         @Override
                         public void reject(Exception e) {
-                            if (!isPending()) {
-                                throw new IllegalStateException("already rejected");
-                            }
-                            Promise.this.innerResolve(e);
+                            Promise.this.innerReject(e);
                         }
                     });
                 } catch (Exception e) {
@@ -174,25 +174,20 @@ public final class Promise<D> {
         this.handler = handler;
     }
 
-    private synchronized Promise<D> innerReject(Exception e) {
-        if (e == null) {
-            return innerResolve(new NullPointerException("reject with null"));
+    private synchronized Promise<D> innerFulfill(final D result) {
+        if (status != PENDING) {
+            throw new IllegalStateException("already resolved");
         }
-        return innerResolve(e);
-    }
-
-    private synchronized Promise<D> innerResolve(final Object object) {
-        status = object instanceof Exception ? REJECTED : FULFILLED;
-        result = object;
-
+        this.result = result;
+        status = FULFILLED;
         if (children == null) {
             return this;
         }
-        for (final Chain child : children) {
+        for (final Chain<D> child : children) {
             handler.post(new Runnable() {
                 @Override
                 public void run() {
-                    child.chain(object);
+                    child.onFulfilled(result);
                 }
             });
         }
@@ -200,14 +195,44 @@ public final class Promise<D> {
         return this;
     }
 
-    private synchronized void attach(final Chain chain) {
+    private synchronized Promise<D> innerReject(final Exception e) {
+        if (status != PENDING) {
+            throw new IllegalStateException("already resolved");
+        }
+        if (e == null) {
+            this.exception = new NullPointerException("reject with null");
+        } else {
+            this.exception = e;
+        }
+        status = REJECTED;
+        if (children == null) {
+            return this;
+        }
+        for (final Chain child : children) {
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    child.onRejected(e);
+                }
+            });
+        }
+        children.clear();
+        return this;
+    }
+
+    private synchronized void attach(final Chain<D> chain) {
         if (status != PENDING) {
             handler.post(new Runnable() {
                 @Override
                 public void run() {
-                    chain.chain(result);
+                    if (status == FULFILLED) {
+                        chain.onFulfilled(result);
+                    } else {
+                        chain.onRejected(exception);
+                    }
                 }
             });
+            return;
         }
         if (children == null) {
             children = new ArrayList<>(1);
@@ -215,61 +240,96 @@ public final class Promise<D> {
         children.add(chain);
     }
 
-    private Promise attach(final int mask, final Callback callback) {
-        final Promise promise = new Promise(handler);
-        attach(new Chain() {
+    private Promise<D> attach(final Callback fulfilled, final Callback rejected) {
+        final Promise<D> promise = new Promise<>(handler);
+        attach(new Chain<D>() {
             @Override
-            public void chain(Object object) {
+            public void onFulfilled(D result) {
                 try {
-                    if ((status & mask) != 0) {
-                        callback.callback(object);
-                    }
-                    promise.innerResolve(object);
+                    fulfilled.callback(result);
+                    promise.innerFulfill(result);
                 } catch (Exception e) {
-                    promise.innerResolve(e);
+                    promise.innerReject(e);
+                }
+            }
+
+            @Override
+            public void onRejected(Exception exception) {
+                try {
+                    rejected.callback(exception);
+                    promise.innerReject(exception);
+                } catch (Exception e) {
+                    promise.innerReject(e);
                 }
             }
         });
         return promise;
     }
 
-    private Promise attach(final int mask, final Filter filter) {
-        final Promise promise = new Promise(handler);
-        attach(new Chain() {
+    private <N> Promise<N> attach(final Filter<Object, N> fulfilled, final Filter<Object, N> rejected) {
+        final Promise<N> promise = new Promise<>(handler);
+        attach(new Chain<D>() {
             @Override
-            public void chain(Object object) {
+            public void onFulfilled(D result) {
                 try {
-                    if ((status & mask) == 0) {
-                        promise.innerResolve(object);
-                        return;
-                    }
-                    promise.innerResolve(filter.filter(object));
+                    N next = fulfilled.filter(result);
+                    promise.innerFulfill(next);
                 } catch (Exception e) {
-                    promise.innerResolve(e);
+                    promise.innerReject(e);
+                }
+            }
+
+            @Override
+            public void onRejected(Exception exception) {
+                try {
+                    N next = rejected.filter(exception);
+                    promise.innerFulfill(next);
+                } catch (Exception e) {
+                    promise.innerReject(e);
                 }
             }
         });
         return promise;
     }
 
-    private Promise attach(final int mask, final Pipe pipe) {
-        final Promise promise = new Promise(handler);
-        attach(new Chain() {
+    private <N> Promise<N> attach(final Pipe<Object, N> fulfilled, final Pipe<Object, N> rejected) {
+        final Promise<N> promise = new Promise<>(handler);
+        attach(new Chain<D>() {
             @Override
-            public void chain(Object object) {
+            public void onFulfilled(D result) {
                 try {
-                    if ((status & mask) == 0) {
-                        promise.innerResolve(object);
-                        return;
-                    }
-                    pipe.pipe(object).attach(new Chain() {
+                    fulfilled.pipe(result).attach(new Chain<N>() {
                         @Override
-                        public void chain(Object object) {
-                            promise.innerResolve(object);
+                        public void onFulfilled(N result) {
+                            promise.innerFulfill(result);
+                        }
+
+                        @Override
+                        public void onRejected(Exception exception) {
+                            promise.innerReject(exception);
                         }
                     });
                 } catch (Exception e) {
-                    promise.innerResolve(e);
+                    promise.innerReject(e);
+                }
+            }
+
+            @Override
+            public void onRejected(Exception exception) {
+                try {
+                    rejected.pipe(exception).attach(new Chain<N>() {
+                        @Override
+                        public void onFulfilled(N result) {
+                            promise.innerFulfill(result);
+                        }
+
+                        @Override
+                        public void onRejected(Exception exception) {
+                            promise.innerReject(exception);
+                        }
+                    });
+                } catch (Exception e) {
+                    promise.innerReject(e);
                 }
             }
         });

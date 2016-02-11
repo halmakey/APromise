@@ -11,7 +11,7 @@ public interface Resolver<D> {
      *
      * @param result is fulfill. reject with result if instance of Exception
      */
-    void resolve(D result);
+    void fulfill(D result);
 
     /***
      * reject with e

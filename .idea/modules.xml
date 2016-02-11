@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/APromise.iml" filepath="$PROJECT_DIR$/APromise.iml" />
       <module fileurl="file://$PROJECT_DIR$/apromise/apromise.iml" filepath="$PROJECT_DIR$/apromise/apromise.iml" />
+      <module fileurl="file://$PROJECT_DIR$/apromise/apromise.iml" filepath="$PROJECT_DIR$/apromise/apromise.iml" />
     </modules>
   </component>
 </project>
