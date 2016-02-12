@@ -1,6 +1,9 @@
 package jp.rubi3.apromise;
 
 /**
+ *
+ * Resolver
+ *
  * Created by halmakey on 2016/02/09.
  */
 public interface Resolver<D> {

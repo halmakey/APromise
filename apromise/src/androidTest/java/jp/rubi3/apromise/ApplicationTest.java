@@ -27,26 +27,26 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
             public void run() {
                 Promise.resolve(
                         builder.append("A")
-                ).then(new Callback<StringBuilder>() {
+                ).onThen(new Callback<StringBuilder>() {
                     @Override
                     public void callback(StringBuilder result) throws Exception {
                         result.append("B");
                         throw new Exception("C"); // throw on then callback
                     }
-                }).then(new Callback<StringBuilder>() {
+                }).onThen(new Callback<StringBuilder>() {
                     @Override
                     public void callback(StringBuilder result) throws Exception {
                         result.append("X"); // through
                     }
-                }).fail(new Callback<Exception>() {
+                }).onCatch(new Callback<Exception>() {
                     @Override
                     public void callback(Exception result) throws Exception {
                         builder.append(result.getMessage());
                     }
-                }).always(new Callback<Object>() {
+                }).onFinally(new Callback<Promise<StringBuilder>>() {
                     @Override
-                    public void callback(Object result) throws Exception {
-                        if (result instanceof Exception) {
+                    public void callback(Promise<StringBuilder> result) throws Exception {
+                        if (result.isRejected()) {
                             builder.append("D"); // through result object
                         } else {
                             builder.append("X");
@@ -70,40 +70,42 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
             public void run() {
                 Promise.resolve(
                         builder.append("A")
-                ).then(new Filter<StringBuilder, String>() {
+                ).onThen(new Filter<StringBuilder, String>() {
                     @Override
                     public String filter(StringBuilder result) throws Exception {
                         builder.append("B");
                         return "C";
                     }
-                }).then(new Filter<String, Exception>() {
+                }).onThen(new Filter<String, Exception>() {
                     @Override
                     public Exception filter(String result) throws Exception {
                         builder.append(result);
                         return new Exception("D"); // filter returns Exception to reject
                     }
-                }).then(new Filter<Exception, String>() {
+                }).onThen(new Filter<Exception, String>() {
                     @Nullable
                     @Override
                     public String filter(Exception result) throws Exception {
                         return "X"; // through
                     }
-                }).fail(new Filter<Exception, String>() {
+                }).onCatch(new Filter<Exception, String>() {
                     @Override
                     public String filter(Exception result) throws Exception {
                         builder.append(result.getMessage());
                         return "E";
                     }
-                }).always(new Filter<Object, String>() {
+                }).onFinally(new Filter<Promise<String>, String>() {
+                    @Nullable
                     @Override
-                    public String filter(Object result) throws Exception {
-                        builder.append(result);
+                    public String filter(Promise<String> result) throws Exception {
+                        builder.append(result.getResult());
                         return "F";
                     }
-                }).always(new Filter<Object, Object>() {
+                }).onFinally(new Filter<Promise<String>, Void>() {
+                    @Nullable
                     @Override
-                    public Object filter(Object result) throws Exception {
-                        builder.append(result);
+                    public Void filter(Promise<String> result) throws Exception {
+                        builder.append(result.getResult());
                         latch.countDown();
                         return null;
                     }
@@ -125,46 +127,46 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
             public void run() {
                 Promise.resolve(
                         "A"
-                ).then(new Pipe<String, String>() {
+                ).onThen(new Pipe<String, String>() {
                     @NonNull
                     @Override
                     public Promise<String> pipe(String result) throws Exception {
                         builder.append(result);
                         return Promise.resolve("B");
                     }
-                }).then(new Pipe<String, String>() {
+                }).onThen(new Pipe<String, String>() {
                     @NonNull
                     @Override
                     public Promise<String> pipe(String result) throws Exception {
                         builder.append(result);
                         throw new Exception("C");
                     }
-                }).then(new Pipe<String, Character>() {
+                }).onThen(new Pipe<String, Character>() {
                     @NonNull
                     @Override
                     public Promise<Character> pipe(String result) throws Exception {
                         builder.append("X");
                         return null; // cause nullpo
                     }
-                }).fail(new Pipe<Exception, Character>() {
+                }).onCatch(new Pipe<Exception, Character>() {
                     @NonNull
                     @Override
                     public Promise<Character> pipe(Exception result) throws Exception {
                         builder.append(result.getMessage());
                         return Promise.reject(new Exception("D"));
                     }
-                }).fail(new Pipe<Exception, Character>() {
+                }).onCatch(new Pipe<Exception, Character>() {
                     @NonNull
                     @Override
                     public Promise<Character> pipe(Exception result) throws Exception {
                         builder.append(result.getMessage());
                         return Promise.resolve('E');
                     }
-                }).always(new Pipe<Object, CountDownLatch>() {
-                    @NonNull
+                }).onFinally(new Pipe<Promise<Character>, CountDownLatch>() {
+                    @Nullable
                     @Override
-                    public Promise<CountDownLatch> pipe(Object result) throws Exception {
-                        builder.append(result);
+                    public Promise<CountDownLatch> pipe(Promise<Character> result) throws Exception {
+                        builder.append(result.getResult());
                         latch.countDown();
                         return Promise.resolve(latch);
                     }
@@ -213,37 +215,37 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
             @Override
             public void run() {
                 Promise resolved = Promise.resolve(null);
-                resolved.then(new Callback() {
+                resolved.onThen(new Callback() {
                     @Override
                     public void callback(Object result) throws Exception {
                         builder.append("A");
                     }
                 });
-                resolved.then(new Callback() {
+                resolved.onThen(new Callback() {
                     @Override
                     public void callback(Object result) throws Exception {
                         builder.append("B");
                     }
                 });
 
-                final Promise<Character> pending = new Promise<>(new Function() {
+                final Promise<Character> pending = new Promise<>(new Function<Character>() {
                     @Override
-                    public void function(final Resolver resolver) throws Exception {
+                    public void function(final Resolver<Character> resolver) throws Exception {
                         handler.postDelayed(new Runnable() {
                             @Override
                             public void run() {
-                                resolver.resolve('D');
+                                resolver.fulfill('D');
                             }
                         }, 1000);
                     }
                 });
-                pending.then(new Callback<Character>() {
+                pending.onThen(new Callback<Character>() {
                     @Override
                     public void callback(Character result) throws Exception {
                         builder.append("C");
                     }
                 });
-                pending.then(new Callback<Character>() {
+                pending.onThen(new Callback<Character>() {
                     @Override
                     public void callback(Character result) throws Exception {
                         builder.append(result);
@@ -263,21 +265,21 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
         final CountDownLatch latch = new CountDownLatch(1);
 
         final Handler handler = new Handler(Looper.getMainLooper());
-        new Promise<>(handler, new Function() {
+        new Promise<>(handler, new Function<String>() {
             @Override
-            public void function(Resolver resolver) throws Exception {
-                try {
-                    resolver.resolve(null);
-                    resolver.resolve(null); // throws IllegalStateException
-                } catch (IllegalStateException ise) {
-                    builder.append("A");
-                    latch.countDown();
-                }
+            public void function(Resolver<String> resolver) throws Exception {
+                resolver.fulfill(null);
+                resolver.fulfill("helloo"); // nop
+                builder.append("A");
             }
-        }).fail(new Callback<Exception>() {
+        }).onCatch(new Callback<Exception>() {
             @Override
             public void callback(Exception result) throws Exception {
                 builder.append("X");
+            }
+        }).onFinally(new Callback<Promise<String>>() {
+            @Override
+            public void callback(Promise<String> result) throws Exception {
                 latch.countDown();
             }
         });
@@ -299,18 +301,18 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
                 Promise.all(
                         Promise.resolve("A"),
                         Promise.resolve("B"),
-                        new Promise<String>(new Function() {
+                        new Promise<>(new Function<String>() {
                             @Override
-                            public void function(final Resolver resolver) throws Exception {
+                            public void function(final Resolver<String> resolver) throws Exception {
                                 handler.postDelayed(new Runnable() {
                                     @Override
                                     public void run() {
-                                        resolver.resolve("C");
+                                        resolver.fulfill("C");
                                     }
                                 }, 1000);
                             }
                         })
-                ).then(new Callback<List<String>>() {
+                ).onThen(new Callback<List<String>>() {
                     @Override
                     public void callback(List<String> result) throws Exception {
                         for (String one : result) {
@@ -334,29 +336,34 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
 
         handler.post(new Runnable() {
             @Override
-             public void run() {
-                 Promise.all(
-                         Promise.resolve("X"),
-                         Promise.resolve("X"),
-                         new Promise<String>(new Function() {
-                             @Override
-                             public void function(final Resolver resolver) throws Exception {
-                                 handler.postDelayed(new Runnable() {
-                                     @Override
-                                     public void run() {
-                                         resolver.reject(new RuntimeException("ABC"));
-                                     }
-                                 }, 1000);
-                             }
-                         })
-                 ).fail(new Callback<Exception>() {
-                     @Override
-                     public void callback(Exception result) throws Exception {
-                         builder.append(result.getMessage());
-                         latch.countDown();
-                     }
-                 });
-             }
+            public void run() {
+                Promise.all(
+                        Promise.resolve("X"),
+                        Promise.resolve("X"),
+                        new Promise<>(new Function<String>() {
+                            @Override
+                            public void function(final Resolver<String> resolver) throws Exception {
+                                handler.postDelayed(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        resolver.reject(new RuntimeException("ABC"));
+                                    }
+                                }, 1000);
+                            }
+                        })
+                ).onCatch(new Callback<Exception>() {
+                    @Override
+                    public void callback(Exception result) throws Exception {
+                        builder.append(result.getMessage());
+
+                    }
+                }).onFinally(new Callback<Promise<List<String>>>() {
+                    @Override
+                    public void callback(Promise<List<String>> result) throws Exception {
+                        latch.countDown();
+                    }
+                });
+            }
         });
 
         latch.await();
@@ -365,7 +372,11 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
     }
 
     public void testResult() throws Exception {
-        Promise promise = Promise.resolve("testResult");
-        assertEquals("testResult", promise.result());
+        String result = "testResult";
+        Promise promise = Promise.resolve(result);
+        assertEquals(result, promise.getResult());
+
+        promise = Promise.reject(null);
+        assertNotNull(promise.getException());
     }
 }

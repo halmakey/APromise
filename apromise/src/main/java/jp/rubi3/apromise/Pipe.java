@@ -1,18 +1,21 @@
 package jp.rubi3.apromise;
 
-import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 /**
+ *
+ * Pipe
+ *
  * Created by halmakey on 2015/03/12.
  */
 public interface Pipe<D, N> {
     /**
      * pipe
      *
-     * @param result
-     * @return promise resolve when returned promise will be resolve.
+     * @param result previous result
+     * @return promise resolve when returned promise will be resolve. or resolved with null if return is null.
      * @throws Exception to reject
      */
-    @NonNull
+    @Nullable
     Promise<N> pipe(D result) throws Exception;
 }
