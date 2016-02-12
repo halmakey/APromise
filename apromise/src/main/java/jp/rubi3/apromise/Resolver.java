@@ -1,6 +1,9 @@
 package jp.rubi3.apromise;
 
 /**
+ *
+ * Resolver
+ *
  * Created by halmakey on 2016/02/09.
  */
 public interface Resolver<D> {
@@ -11,7 +14,7 @@ public interface Resolver<D> {
      *
      * @param result is fulfill. reject with result if instance of Exception
      */
-    void resolve(D result);
+    void fulfill(D result);
 
     /***
      * reject with e
