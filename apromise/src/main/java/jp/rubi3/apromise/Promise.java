@@ -31,8 +31,8 @@ public final class Promise<D> {
      * @param exception reject with exception
      * @return returns reject promise with NullPointerException instance if object is null.
      */
-    public static Promise reject(@Nullable final Exception exception) {
-        return new Promise().innerReject(exception);
+    public static <D> Promise<D> reject(@Nullable final Exception exception) {
+        return new Promise<D>().innerReject(exception);
     }
 
     @SafeVarargs
@@ -41,7 +41,6 @@ public final class Promise<D> {
     }
 
     @SafeVarargs
-    @SuppressWarnings("unchecked")
     public static <D> Promise<List<D>> all(@NonNull final Handler handler, @NonNull final Promise<D>... promises) {
         Chain<D, List<D>> chain = new Chain<D, List<D>>() {
             { promise = new Promise<>(handler); }
@@ -62,7 +61,7 @@ public final class Promise<D> {
                 }
                 ArrayList<D> results = new ArrayList<>(promises.length);
                 for (Promise<D> one : promises) {
-                    results.add((D) one.result);
+                    results.add(one.getResult());
                 }
                 promise.innerResolve(results);
             }
@@ -161,39 +160,39 @@ public final class Promise<D> {
     }
 
     public final Promise<D> onThen(@NonNull Callback<D> callback) {
-        return attach(requireNonNull(callback), null);
+        return attach(nonNull(callback), null);
     }
 
     public final <N> Promise<N> onThen(@NonNull Filter<D, N> filter) {
-        return attach(requireNonNull(filter), null);
+        return attach(nonNull(filter), null);
     }
 
     public final <N> Promise<N> onThen(@NonNull Pipe<D, N> pipe) {
-        return attach(requireNonNull(pipe), null);
+        return attach(nonNull(pipe), null);
     }
 
     public final Promise<D> onCatch(@NonNull Callback<Exception> callback) {
-        return attach(null, requireNonNull(callback));
+        return attach(null, nonNull(callback));
     }
 
     public final Promise<D> onCatch(@NonNull Filter<Exception, D> filter) {
-        return attach(null, requireNonNull(filter));
+        return attach(null, nonNull(filter));
     }
 
     public final Promise<D> onCatch(@NonNull Pipe<Exception, D> pipe) {
-        return attach(null, requireNonNull(pipe));
+        return attach(null, nonNull(pipe));
     }
 
     public final Promise<D> onFinally(Callback<Promise<D>> callback) {
-        return attachFinally(requireNonNull(callback));
+        return attachFinally(nonNull(callback));
     }
 
     public final <N> Promise<N> onFinally(@NonNull Filter<Promise<D>, N> filter) {
-        return attachFinally(requireNonNull(filter));
+        return attachFinally(nonNull(filter));
     }
 
     public final <N> Promise<N> onFinally(@NonNull Pipe<Promise<D>, N> pipe) {
-        return attachFinally(requireNonNull(pipe));
+        return attachFinally(nonNull(pipe));
     }
 
     private synchronized Promise<D> innerResolve(Object object) {
@@ -283,7 +282,9 @@ public final class Promise<D> {
     private <N> Promise<N> attach(final Pipe<D, N> fulfilled, final Pipe<Exception, N> rejected) {
         final Promise<N> attached = new Promise<>(handler);
         return attach(new Chain<D, N>() {
-            { promise = attached; }
+            {
+                promise = attached;
+            }
 
             @Override
             void onChain(Promise<D> resolved) throws Exception {
@@ -349,7 +350,9 @@ public final class Promise<D> {
                     return;
                 }
                 next.attach(new Chain<N, N>() {
-                    { promise = attached; }
+                    {
+                        promise = attached;
+                    }
 
                     @Override
                     void onChain(Promise<N> resolved) throws Exception {
@@ -360,10 +363,10 @@ public final class Promise<D> {
         });
     }
 
-    private static <T> T requireNonNull(T o) {
-        if (o == null) {
+    private static <T> T nonNull(T object) {
+        if (object == null) {
             throw new NullPointerException();
         }
-        return o;
+        return object;
     }
 }
