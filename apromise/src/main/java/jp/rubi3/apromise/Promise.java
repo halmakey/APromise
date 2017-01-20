@@ -26,6 +26,15 @@ public final class Promise<D> {
     }
 
     /**
+     * create resolve promise with Void.
+     *
+     * @return returns resolve promise with null
+     */
+    public static Promise<Void> resolve() {
+        return new Promise<Void>().innerResolve(null);
+    }
+
+    /**
      * create reject promise.
      *
      * @param exception reject with exception
