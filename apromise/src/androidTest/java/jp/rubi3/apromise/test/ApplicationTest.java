@@ -220,16 +220,16 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
         handler.post(new Runnable() {
             @Override
             public void run() {
-                Promise resolved = Promise.resolve(null);
-                resolved.onThen(new Callback() {
+                Promise<Void> resolved = Promise.resolve(null);
+                resolved.onThen(new Callback<Void>() {
                     @Override
-                    public void callback(Object result) throws Exception {
+                    public void callback(Void result) throws Exception {
                         builder.append("A");
                     }
                 });
-                resolved.onThen(new Callback() {
+                resolved.onThen(new Callback<Void>() {
                     @Override
-                    public void callback(Object result) throws Exception {
+                    public void callback(Void result) throws Exception {
                         builder.append("B");
                     }
                 });
