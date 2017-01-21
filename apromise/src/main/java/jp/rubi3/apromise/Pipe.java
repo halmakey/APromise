@@ -17,5 +17,5 @@ public interface Pipe<D, N> {
      * @throws Exception to reject
      */
     @Nullable
-    Promise<N> pipe(D result) throws Exception;
+    Promise<N> pipe(@Nullable D result) throws Exception;
 }

@@ -17,5 +17,5 @@ public interface Filter<D, N> {
      * @throws Exception to reject
      */
     @Nullable
-    N filter(D result) throws Exception;
+    N filter(@Nullable D result) throws Exception;
 }
