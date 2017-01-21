@@ -1,5 +1,7 @@
 package jp.rubi3.apromise;
 
+import android.support.annotation.Nullable;
+
 /**
  *
  * Resolver
@@ -14,7 +16,7 @@ public interface Resolver<D> {
      *
      * @param result is fulfill. reject with result if instance of Exception
      */
-    void fulfill(D result);
+    void fulfill(@Nullable D result);
 
     /***
      * reject with e
@@ -23,5 +25,5 @@ public interface Resolver<D> {
      *
      * @param e is reject. reject with NullPointerException if null
      */
-    void reject(Exception e);
+    void reject(@Nullable Exception e);
 }

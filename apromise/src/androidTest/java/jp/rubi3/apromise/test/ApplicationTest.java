@@ -87,19 +87,19 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
                     @Override
                     public Exception filter(String result) throws Exception {
                         builder.append(result);
-                        return new Exception("D"); // filter returns Exception to reject
+                        return new Exception("D"); // filter returns Exception to resolved with Exception
                     }
                 }).onThen(new Filter<Exception, String>() {
                     @Nullable
                     @Override
                     public String filter(Exception result) throws Exception {
-                        return "X"; // through
+                        builder.append(result.getMessage());
+                        return "E";
                     }
                 }).onCatch(new Filter<Exception, String>() {
                     @Override
                     public String filter(Exception result) throws Exception {
-                        builder.append(result.getMessage());
-                        return "E";
+                        return "X";
                     }
                 }).onFinally(new Filter<Promise<String>, String>() {
                     @Nullable
@@ -149,14 +149,12 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
                         throw new Exception("C");
                     }
                 }).onThen(new Pipe<String, Character>() {
-                    @NonNull
                     @Override
                     public Promise<Character> pipe(String result) throws Exception {
                         builder.append("X");
                         return null; // cause nullpo
                     }
                 }).onCatch(new Pipe<Exception, Character>() {
-                    @NonNull
                     @Override
                     public Promise<Character> pipe(Exception result) throws Exception {
                         builder.append(result.getMessage());
@@ -193,9 +191,10 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
     public void testStatus() throws Exception {
         Handler handler = new Handler(Looper.getMainLooper());
 
-        Promise pending = new Promise(handler, new Function() {
+        Promise<Void> pending = new Promise<>(handler, new Function<Void>() {
             @Override
-            public void function(Resolver resolver) throws Exception {
+            public void function(Resolver<Void> resolver) throws Exception {
+                // NOP
             }
         });
         assertTrue(pending.isPending());
@@ -298,7 +297,7 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
 
     public void testAllDone() throws Exception {
         final StringBuilder builder = new StringBuilder();
-        final CountDownLatch latch = new CountDownLatch(1);
+        final CountDownLatch latch = new CountDownLatch(2);
 
         final Handler handler = new Handler(Looper.getMainLooper());
 
@@ -328,11 +327,36 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
                         latch.countDown();
                     }
                 });
+
+                Promise.all(
+                        handler,
+                        Promise.resolve("A"),
+                        Promise.resolve("B"),
+                        new Promise<>(new Function<String>() {
+                            @Override
+                            public void function(final Resolver<String> resolver) throws Exception {
+                                handler.postDelayed(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        resolver.fulfill("C");
+                                    }
+                                }, 1000);
+                            }
+                        })
+                ).onThen(new Callback<List<String>>() {
+                    @Override
+                    public void callback(List<String> result) throws Exception {
+                        for (String one : result) {
+                            builder.append(one);
+                        }
+                        latch.countDown();
+                    }
+                });
             }
         });
 
         latch.await();
-        assertEquals("ABC", builder.toString());
+        assertEquals("ABCABC", builder.toString());
     }
 
     public void testAllOneFail() throws Exception {
@@ -377,38 +401,158 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
         assertEquals("ABC", builder.toString());
     }
 
-    public void testDoneFilterFailFilter() throws Exception {
+    public void testDoneFailCallback() throws Exception {
         final StringBuilder builder = new StringBuilder();
-        final CountDownLatch latch = new CountDownLatch(1);
+        final CountDownLatch latch = new CountDownLatch(2);
 
         final Handler handler = new Handler(Looper.getMainLooper());
 
         handler.post(new Runnable() {
             @Override
             public void run() {
-                Promise.all(
-                        Promise.resolve("X"),
-                        Promise.resolve("X"),
-                        new Promise<>(new Function<String>() {
-                            @Override
-                            public void function(final Resolver<String> resolver) throws Exception {
-                                handler.postDelayed(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        resolver.reject(new RuntimeException("ABC"));
-                                    }
-                                }, 1000);
-                            }
-                        })
-                ).onCatch(new Callback<Exception>() {
+                Promise.resolve().onThen(new Callback<Void>() {
+                    @Override
+                    public void callback(Void result) throws Exception {
+                        builder.append("A");
+                    }
+                }, new Callback<Exception>() {
                     @Override
                     public void callback(Exception result) throws Exception {
-                        builder.append(result.getMessage());
+                        builder.append("X");
+                    }
+                }).onFinally(new Callback<Promise<Void>>() {
+                    @Override
+                    public void callback(Promise<Void> result) throws Exception {
+                        latch.countDown();
+                    }
+                });
+
+                Promise.reject(null).onThen(new Callback<Object>() {
+                    @Override
+                    public void callback(Object result) throws Exception {
+                        builder.append("X");
 
                     }
-                }).onFinally(new Callback<Promise<List<String>>>() {
+                }, new Callback<Exception>() {
                     @Override
-                    public void callback(Promise<List<String>> result) throws Exception {
+                    public void callback(Exception result) throws Exception {
+                        builder.append("B");
+                    }
+                }).onFinally(new Callback<Promise<Object>>() {
+                    @Override
+                    public void callback(Promise<Object> result) throws Exception {
+                        latch.countDown();
+                    }
+                });
+
+            }
+        });
+
+        latch.await();
+        assertEquals("AB", builder.toString());
+    }
+
+    public void testDoneFailFilter() throws Exception {
+        final StringBuilder builder = new StringBuilder();
+        final CountDownLatch latch = new CountDownLatch(2);
+
+        final Handler handler = new Handler(Looper.getMainLooper());
+
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                Promise.resolve().onThen(new Filter<Void, String>() {
+                    @Nullable
+                    @Override
+                    public String filter(@Nullable Void result) throws Exception {
+                        return "A";
+                    }
+                }, new Filter<Exception, String>() {
+                    @Nullable
+                    @Override
+                    public String filter(@Nullable Exception result) throws Exception {
+                        return "X";
+                    }
+                }).onFinally(new Callback<Promise<String>>() {
+                    @Override
+                    public void callback(Promise<String> result) throws Exception {
+                        builder.append(result.getResult());
+                        latch.countDown();
+                    }
+                });
+
+                Promise.reject(null).onThen(new Filter<Object, String>() {
+                    @Nullable
+                    @Override
+                    public String filter(@Nullable Object result) throws Exception {
+                        return "X";
+                    }
+                }, new Filter<Exception, String>() {
+                    @Nullable
+                    @Override
+                    public String filter(@Nullable Exception result) throws Exception {
+                        return "B";
+                    }
+                }).onFinally(new Callback<Promise<String>>() {
+                    @Override
+                    public void callback(Promise<String> result) throws Exception {
+                        builder.append(result.getResult());
+                        latch.countDown();
+                    }
+                });
+
+            }
+        });
+
+        latch.await();
+        assertEquals("AB", builder.toString());
+    }
+
+    public void testDoneFailPipe() throws Exception {
+        final StringBuilder builder = new StringBuilder();
+        final CountDownLatch latch = new CountDownLatch(2);
+
+        final Handler handler = new Handler(Looper.getMainLooper());
+
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                Promise.resolve().onThen(new Pipe<Void, String>() {
+                    @Nullable
+                    @Override
+                    public Promise<String> pipe(@Nullable Void result) throws Exception {
+                        return Promise.resolve("A");
+                    }
+                }, new Pipe<Exception, String>() {
+                    @Nullable
+                    @Override
+                    public Promise<String> pipe(@Nullable Exception result) throws Exception {
+                        return Promise.resolve("X");
+                    }
+                }).onFinally(new Callback<Promise<String>>() {
+                    @Override
+                    public void callback(Promise<String> result) throws Exception {
+                        builder.append(result.getResult());
+                        latch.countDown();
+                    }
+                });
+
+                Promise.reject(null).onThen(new Pipe<Object, String>() {
+                    @Nullable
+                    @Override
+                    public Promise<String> pipe(@Nullable Object result) throws Exception {
+                        return Promise.resolve("X");
+                    }
+                }, new Pipe<Exception, String>() {
+                    @Nullable
+                    @Override
+                    public Promise<String> pipe(@Nullable Exception result) throws Exception {
+                        return Promise.resolve("B");
+                    }
+                }).onFinally(new Callback<Promise<String>>() {
+                    @Override
+                    public void callback(Promise<String> result) throws Exception {
+                        builder.append(result.getResult());
                         latch.countDown();
                     }
                 });
@@ -416,9 +560,8 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
         });
 
         latch.await();
-        assertEquals("ABC", builder.toString());
+        assertEquals("AB", builder.toString());
     }
-
 
     public void testResult() throws Exception {
         String result = "testResult";
