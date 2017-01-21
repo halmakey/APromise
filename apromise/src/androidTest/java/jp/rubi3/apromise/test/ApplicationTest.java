@@ -1,4 +1,4 @@
-package jp.rubi3.apromise;
+package jp.rubi3.apromise.test;
 
 import android.app.Application;
 import android.os.Handler;
@@ -9,6 +9,13 @@ import android.test.ApplicationTestCase;
 
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+
+import jp.rubi3.apromise.Callback;
+import jp.rubi3.apromise.Filter;
+import jp.rubi3.apromise.Function;
+import jp.rubi3.apromise.Pipe;
+import jp.rubi3.apromise.Promise;
+import jp.rubi3.apromise.Resolver;
 
 /**
  * <a href="http://d.android.com/tools/testing/testing_android.html">Testing Fundamentals</a>
@@ -368,8 +375,50 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
 
         latch.await();
         assertEquals("ABC", builder.toString());
-
     }
+
+    public void testDoneFilterFailFilter() throws Exception {
+        final StringBuilder builder = new StringBuilder();
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        final Handler handler = new Handler(Looper.getMainLooper());
+
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                Promise.all(
+                        Promise.resolve("X"),
+                        Promise.resolve("X"),
+                        new Promise<>(new Function<String>() {
+                            @Override
+                            public void function(final Resolver<String> resolver) throws Exception {
+                                handler.postDelayed(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        resolver.reject(new RuntimeException("ABC"));
+                                    }
+                                }, 1000);
+                            }
+                        })
+                ).onCatch(new Callback<Exception>() {
+                    @Override
+                    public void callback(Exception result) throws Exception {
+                        builder.append(result.getMessage());
+
+                    }
+                }).onFinally(new Callback<Promise<List<String>>>() {
+                    @Override
+                    public void callback(Promise<List<String>> result) throws Exception {
+                        latch.countDown();
+                    }
+                });
+            }
+        });
+
+        latch.await();
+        assertEquals("ABC", builder.toString());
+    }
+
 
     public void testResult() throws Exception {
         String result = "testResult";
