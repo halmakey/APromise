@@ -1,35 +1,3 @@
-# APromise
-The simple promise llibrary.
-
-Usage
------
-    new Promise<>(new Function<String>() {
-        @Override
-        public void function(Resolver<String> resolver) throws Exception {
-            resolver.fulfill("Hola!");
-        }
-    }).onThen(new Callback<String>() {
-        @Override
-        public void callback(String result) throws Exception {
-            Log.d(TAG, "callback: " + result);
-        }
-    });
-
-    Promise.resolve("Ciao").onThen(new Callback<String>() {
-        @Override
-        public void callback(String result) throws Exception {
-            throw new Exception("You can throw Exception at callback.");
-        }
-    }).onCatch(new Callback<Exception>() {
-        @Override
-        public void callback(Exception result) throws Exception {
-            Log.d(TAG, "callback: " + result);
-        }
-    });
-
-License
--------
-
 MIT License
 
 Copyright (c) 2016 Ryo Kikuchi
