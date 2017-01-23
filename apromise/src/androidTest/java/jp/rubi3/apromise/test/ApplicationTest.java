@@ -2,7 +2,9 @@ package jp.rubi3.apromise.test;
 
 import android.app.Application;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.Looper;
+import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.test.ApplicationTestCase;
@@ -570,5 +572,24 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
 
         promise = Promise.reject(null);
         assertNotNull(promise.getException());
+    }
+
+    public void testAwait() throws Exception {
+        HandlerThread handlerThread = new HandlerThread("Test");
+        handlerThread.start();
+        String result = new Promise<>(
+                new Handler(handlerThread.getLooper()),
+                new Function<String>() {
+            @Override
+            public void function(final Resolver<String> resolver) throws Exception {
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        resolver.fulfill("A");
+                    }
+                }, 5000);
+            }
+        }).await().getResult();
+        assertEquals("A", result);
     }
 }
