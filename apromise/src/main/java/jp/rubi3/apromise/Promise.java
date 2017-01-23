@@ -191,6 +191,7 @@ public final class Promise<D> {
         }
         this.result = result;
         resolved = true;
+        notifyAll();
         return doChain(chain);
     }
 
@@ -201,6 +202,7 @@ public final class Promise<D> {
         this.exception = (exception == null)
                 ? new NullPointerException("reject with null") : exception;
         resolved = true;
+        notifyAll();
         return doChain(chain);
     }
 
@@ -515,5 +517,17 @@ public final class Promise<D> {
                 throw new NullPointerException(message);
             }
         }
+    }
+
+    public synchronized Promise<D> await() {
+        if (resolved) {
+            return this;
+        }
+        try {
+            wait();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return this;
     }
 }
