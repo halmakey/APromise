@@ -44,8 +44,8 @@ public final class Promise<D> {
      * @return returns promise rejected with exception or NullPointerException if exception is null.
      */
     @NonNull
-    public static <D> Promise<D> reject(@Nullable final Exception exception) {
-        return new Promise<D>().doReject(exception);
+    public static Promise reject(@Nullable final Exception exception) {
+        return new Promise<>().doReject(exception);
     }
 
     @SafeVarargs
