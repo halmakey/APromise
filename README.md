@@ -1,5 +1,5 @@
 # APromise
-The simple promise llibrary.
+The simple promise library.
 
 Usage
 -----
