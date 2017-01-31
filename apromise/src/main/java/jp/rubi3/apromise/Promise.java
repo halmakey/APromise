@@ -1,6 +1,7 @@
 package jp.rubi3.apromise;
 
 import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -130,7 +131,7 @@ public final class Promise<D> {
 
     public Promise(@NonNull Handler handler,@NonNull final Function<D> function) {
         this(handler);
-        this.handler.post(new Runnable() {
+        Runnable runnable = new Runnable() {
             @Override
             public void run() {
                 try {
@@ -152,7 +153,12 @@ public final class Promise<D> {
                     doReject(e);
                 }
             }
-        });
+        };
+        if (handler.getLooper() == Looper.myLooper()) {
+            runnable.run();
+            return;
+        }
+        this.handler.post(runnable);
     }
 
     private Promise() {
