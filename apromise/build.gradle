@@ -29,6 +29,7 @@ publish {
     artifactId = 'apromise'
     publishVersion = '0.14.0'
     desc = 'The simple promise library.'
+    licences = ['MIT']
     website = 'https://github.com/halmakey/APromise'
 }
 
