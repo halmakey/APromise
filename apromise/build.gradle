@@ -24,11 +24,10 @@ android {
 }
 
 publish {
-    userOrg = 'rubi3'
     groupId = 'jp.rubi3.apromise'
     artifactId = 'apromise'
-    publishVersion = '0.14.0'
-    desc = 'The simple promise library.'
+    publishVersion = '0.14.1'
+    desc = 'A simple promise library.'
     licences = ['MIT']
     website = 'https://github.com/halmakey/APromise'
 }
@@ -36,5 +35,5 @@ publish {
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     testCompile 'junit:junit:4.12'
-    compile 'com.android.support:appcompat-v7:25.1.0'
+    compile 'com.android.support:appcompat-v7:25.1.1'
 }

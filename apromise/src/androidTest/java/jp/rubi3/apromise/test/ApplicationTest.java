@@ -592,4 +592,40 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
         }).await().getResult();
         assertEquals("A", result);
     }
+
+    public void testMultipleDone() throws Exception {
+        final CountDownLatch latch = new CountDownLatch(3);
+        HandlerThread oneThread = new HandlerThread("One");
+        oneThread.start();
+        Promise<String> one = new Promise<>(
+                new Handler(oneThread.getLooper()),
+                new Function<String>() {
+                    @Override
+                    public void function(final Resolver<String> resolver) throws Exception {
+                        new Handler().postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                resolver.fulfill("A");
+                            }
+                        }, 3000);
+                    }
+                });
+        HandlerThread twoThread = new HandlerThread("Two");
+        twoThread.start();
+        Promise<String> two = new Promise<>(
+                new Handler(twoThread.getLooper()),
+                new Function<String>() {
+                    @Override
+                    public void function(final Resolver<String> resolver) throws Exception {
+                        new Handler().postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                resolver.fulfill("B");
+                            }
+                        }, 5000);
+                    }
+                });
+        Promise<List<String>> promise = Promise.all(one, two);
+        promise.await();
+    }
 }
