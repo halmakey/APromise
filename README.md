@@ -1,5 +1,5 @@
 # APromise
-A simple promise library.
+A simple promise library for android.
 
 Usage
 -----
