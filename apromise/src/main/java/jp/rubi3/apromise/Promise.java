@@ -14,7 +14,7 @@ import java.util.List;
  *
  * Created by halmakey on 2015/03/12.
  */
-public final class Promise<D> {
+public final class Promise<D> implements Thenable<D>{
     /**
      * create resolved promise.
      *
@@ -169,14 +169,17 @@ public final class Promise<D> {
         this.handler = handler;
     }
 
+    @Override
     public final boolean isPending() {
         return !resolved;
     }
 
+    @Override
     public final boolean isFulfilled() {
         return resolved && exception == null;
     }
 
+    @Override
     public final boolean isRejected() {
         return exception != null;
     }
@@ -242,11 +245,13 @@ public final class Promise<D> {
     }
 
     @NonNull
-    public Promise<D> onThen(@Nullable final Callback<D> fulfilled) {
-        return onThen(fulfilled, null);
+    @Override
+    public Thenable<D> onThen(@Nullable Callback<D> fulfilled) {
+        return null;
     }
 
     @NonNull
+    @Override
     public Promise<D> onThen(@Nullable final Callback<D> fulfilled, @Nullable final Callback<Exception> rejected) {
         final Promise<D> promise = new Promise<>(handler);
         doChain(new Chain<D, D>(promise) {
@@ -271,12 +276,14 @@ public final class Promise<D> {
     }
 
     @NonNull
+    @Override
     public <N> Promise<N> onThen(@NonNull final Filter<D, N> fulfilled) {
         assertNonNull("fulfilled should be not null.");
         return onThen(fulfilled, null);
     }
 
     @NonNull
+    @Override
     public <N> Promise<N> onThen(@NonNull final Filter<D, N> fulfilled, @Nullable final Filter<Exception, N> rejected) {
         assertNonNull("fulfilled should be not null.", fulfilled);
         Promise<N> promise = new Promise<>(handler);
@@ -300,12 +307,14 @@ public final class Promise<D> {
         return promise;
     }
 
+    @Override
     @NonNull
     public <N> Promise<N> onThen(@NonNull final Pipe<D, N> fulfilled) {
         assertNonNull("fulfilled should be not null.", fulfilled);
         return onThen(fulfilled, null);
     }
 
+    @Override
     @NonNull
     public <N> Promise<N> onThen(@NonNull final Pipe<D, N> fulfilled, @Nullable final Pipe<Exception, N> rejected) {
         assertNonNull("fulfilled should be not null.", fulfilled);
@@ -358,6 +367,7 @@ public final class Promise<D> {
         return promise;
     }
 
+    @Override
     @NonNull
     public Promise<D> onCatch(@Nullable final Callback<Exception> rejected) {
         final Promise<D> promise = new Promise<>(handler);
@@ -378,6 +388,7 @@ public final class Promise<D> {
         return promise;
     }
 
+    @Override
     @NonNull
     public Promise<D> onCatch(@Nullable final Filter<Exception, D> rejected) {
         final Promise<D> promise = new Promise<>(handler);
@@ -400,6 +411,7 @@ public final class Promise<D> {
         return promise;
     }
 
+    @Override
     @NonNull
     public Promise<D> onCatch(@Nullable final Pipe<Exception, D> rejected) {
         final Promise<D> promise = new Promise<>(handler);
@@ -436,6 +448,7 @@ public final class Promise<D> {
         return promise;
     }
 
+    @Override
     @NonNull
     public Promise<D> onFinally(@Nullable final Callback<Promise<D>> callback) {
         final Promise<D> promise = new Promise<>(handler);
@@ -459,6 +472,7 @@ public final class Promise<D> {
         return promise;
     }
 
+    @Override
     @NonNull
     public <N> Promise<N> onFinally(@NonNull final Filter<Promise<D>, N> filter) {
         assertNonNull("filter should be not null.", filter);
@@ -479,6 +493,7 @@ public final class Promise<D> {
         return promise;
     }
 
+    @Override
     @NonNull
     public <N> Promise<N> onFinally(@NonNull final Pipe<Promise<D>, N> pipe) {
         assertNonNull("pipe should be not null.", pipe);
@@ -525,7 +540,9 @@ public final class Promise<D> {
         }
     }
 
-    public synchronized Promise<D> await() {
+    @Override
+    @NonNull
+    public Promise<D> await() {
         if (resolved) {
             return this;
         }
