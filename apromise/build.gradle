@@ -31,6 +31,10 @@ publish {
     desc = 'A simple promise library.'
     licences = ['MIT']
     website = 'https://github.com/halmakey/APromise'
+
+    bintrayUser = System.env.BINTRAY_USERNAME
+    bintrayKey = System.env.BINTRAY_KEY
+
 }
 
 dependencies {
