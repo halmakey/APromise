@@ -231,12 +231,12 @@ public final class Promise<D> {
     }
 
     @NonNull
-    public Promise<D> onThen(@Nullable Callback<D> fulfilled) {
-        return onThen(fulfilled, null);
+    public Promise<D> thenCallback(@Nullable Callback<D> fulfilled) {
+        return thenCallback(fulfilled, null);
     }
 
     @NonNull
-    public Promise<D> onThen(@Nullable final Callback<D> fulfilled, @Nullable final Callback<Exception> rejected) {
+    public Promise<D> thenCallback(@Nullable final Callback<D> fulfilled, @Nullable final Callback<Exception> rejected) {
         final Promise<D> promise = new Promise<>(handler.getLooper());
         chain(new Chain<D>() {
             @Override
@@ -257,12 +257,12 @@ public final class Promise<D> {
     }
 
     @NonNull
-    public <N> Promise<N> onThen(@NonNull final Filter<D, N> fulfilled) {
-        return onThen(fulfilled, null);
+    public <N> Promise<N> thenFilter(@NonNull final Filter<D, N> fulfilled) {
+        return thenFilter(fulfilled, null);
     }
 
     @NonNull
-    public <N> Promise<N> onThen(@NonNull final Filter<D, N> fulfilled, @Nullable final Filter<Exception, N> rejected) {
+    public <N> Promise<N> thenFilter(@NonNull final Filter<D, N> fulfilled, @Nullable final Filter<Exception, N> rejected) {
         assertNonNull("fulfilled should be not null.", fulfilled);
         final Promise<N> promise = new Promise<>(handler.getLooper());
         chain(new Chain<D>() {
@@ -287,12 +287,12 @@ public final class Promise<D> {
     }
 
     @NonNull
-    public <N> Promise<N> onThen(@NonNull final Pipe<D, N> fulfilled) {
-        return onThen(fulfilled, null);
+    public <N> Promise<N> thenPipe(@NonNull final Pipe<D, N> fulfilled) {
+        return thenPipe(fulfilled, null);
     }
 
     @NonNull
-    public <N> Promise<N> onThen(@NonNull final Pipe<D, N> fulfilled, @Nullable final Pipe<Exception, N> rejected) {
+    public <N> Promise<N> thenPipe(@NonNull final Pipe<D, N> fulfilled, @Nullable final Pipe<Exception, N> rejected) {
         assertNonNull("fulfilled should be not null.", fulfilled);
         final Promise<N> promise = new Promise<>(handler.getLooper());
         chain(new Chain<D>() {
@@ -325,13 +325,13 @@ public final class Promise<D> {
     }
 
     @NonNull
-    public Promise<D> onCatch(@Nullable final Callback<Exception> rejected) {
-        return onThen(null, rejected);
+    public Promise<D> catchCallback(@Nullable final Callback<Exception> rejected) {
+        return thenCallback(null, rejected);
     }
 
     @NonNull
-    public Promise<D> onCatch(@Nullable final Filter<Exception, D> rejected) {
-        return onThen(new Filter<D, D>() {
+    public Promise<D> catchFilter(@Nullable final Filter<Exception, D> rejected) {
+        return thenFilter(new Filter<D, D>() {
             @Nullable
             @Override
             public D filter(@Nullable D result) throws Exception {
@@ -341,8 +341,8 @@ public final class Promise<D> {
     }
 
     @NonNull
-    public Promise<D> onCatch(@Nullable final Pipe<Exception, D> rejected) {
-        return onThen(new Pipe<D, D>() {
+    public Promise<D> catchPipe(@Nullable final Pipe<Exception, D> rejected) {
+        return thenPipe(new Pipe<D, D>() {
             @NonNull
             @Override
             public Promise<D> pipe(@Nullable D result) throws Exception {
@@ -352,7 +352,7 @@ public final class Promise<D> {
     }
 
     @NonNull
-    public Promise<D> onFinally(@Nullable final Callback<Promise<D>> callback) {
+    public Promise<D> finallyCallback(@Nullable final Callback<Promise<D>> callback) {
         final Promise<D> promise = new Promise<>(handler.getLooper());
         chain(new Chain<D>() {
             @Override
@@ -371,7 +371,7 @@ public final class Promise<D> {
     }
 
     @NonNull
-    public <N> Promise<N> onFinally(@NonNull final Filter<Promise<D>, N> filter) {
+    public <N> Promise<N> finallyFilter(@NonNull final Filter<Promise<D>, N> filter) {
         assertNonNull("filter should be not null.", filter);
         final Promise<N> promise = new Promise<>(handler.getLooper());
         chain(new Chain<D>() {
@@ -388,7 +388,7 @@ public final class Promise<D> {
     }
 
     @NonNull
-    public <N> Promise<N> onFinally(@NonNull final Pipe<Promise<D>, N> pipe) {
+    public <N> Promise<N> finallyPipe(@NonNull final Pipe<Promise<D>, N> pipe) {
         assertNonNull("Pipe should be not null.", pipe);
         final Promise<N> promise = new Promise<>(handler.getLooper());
         chain(new Chain<D>() {

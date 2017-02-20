@@ -187,7 +187,7 @@ public class APromiseInstrumentationTest {
                 assertEquals(handlerThread.getLooper(), Looper.myLooper());
                 resolver.fulfill("OK");
             }
-        }).onThen(new Callback<String>() {
+        }).thenCallback(new Callback<String>() {
             @Override
             public void callback(String result) throws Exception {
                 assertEquals(handlerThread.getLooper(), Looper.myLooper());
@@ -273,7 +273,7 @@ public class APromiseInstrumentationTest {
     public void testCallbackBefore() throws Exception {
         final StringBuilder builder = new StringBuilder();
         Promise<String> promise = delayedResolve("OK", 100);
-        Promise<String> result = promise.onThen(new Callback<String>() {
+        Promise<String> result = promise.thenCallback(new Callback<String>() {
             @Override
             public void callback(String result) throws Exception {
                 builder.append(result);
@@ -296,7 +296,7 @@ public class APromiseInstrumentationTest {
         Promise<String> promise = Promise.resolve("OK");
         assertTrue(promise.isFulfilled());
 
-        Promise<String> result = promise.onThen(new Callback<String>() {
+        Promise<String> result = promise.thenCallback(new Callback<String>() {
             @Override
             public void callback(String result) throws Exception {
                 builder.append(result);
@@ -311,7 +311,7 @@ public class APromiseInstrumentationTest {
         final StringBuilder builder = new StringBuilder();
 
         Promise<String> promise = Promise.resolve("OK");
-        Promise<String> result = promise.onThen(new Callback<String>() {
+        Promise<String> result = promise.thenCallback(new Callback<String>() {
             @Override
             public void callback(String result) throws Exception {
                 builder.append(result);
@@ -330,7 +330,7 @@ public class APromiseInstrumentationTest {
     public void testCallbackReject() throws Exception {
         final StringBuilder builder = new StringBuilder();
         Promise<String> promise = Promise.reject(String.class, new Exception("OK"));
-        Promise<String> result = promise.onThen(new Callback<String>() {
+        Promise<String> result = promise.thenCallback(new Callback<String>() {
             @Override
             public void callback(String result) throws Exception {
                 fail();
@@ -347,7 +347,7 @@ public class APromiseInstrumentationTest {
 
     @Test
     public void testCallbackThrow() throws Exception {
-        Promise<Object> promise = Promise.resolve(null).onThen(new Callback<Object>() {
+        Promise<Object> promise = Promise.resolve(null).thenCallback(new Callback<Object>() {
             @Override
             public void callback(Object result) throws Exception {
                 throw new Exception("OK");
@@ -359,10 +359,7 @@ public class APromiseInstrumentationTest {
 
     @Test
     public void testCallbackNullCheck() throws Exception {
-        Callback<String> fulfilled = null;
-        Callback<Exception> rejected = null;
-        //noinspection ConstantConditions
-        Promise promise = Promise.resolve("OK").onThen(fulfilled, rejected);
+        Promise promise = Promise.resolve("OK").thenCallback(null, null);
         assertTrue(promise.sync().isFulfilled());
         assertEquals("OK", promise.getResult());
     }
@@ -372,7 +369,7 @@ public class APromiseInstrumentationTest {
         Promise<Character[]> promise = Promise.resolve(new Character[] {'O', 'K'});
         assertTrue(promise.sync().isFulfilled());
 
-        Promise<String> result = promise.onThen(new Filter<Character[], String>() {
+        Promise<String> result = promise.thenFilter(new Filter<Character[], String>() {
             @Override
             public String filter(Character[] result) throws Exception {
                 StringBuilder builder = new StringBuilder();
@@ -397,7 +394,7 @@ public class APromiseInstrumentationTest {
         Promise<Object> promise = Promise.reject(new Exception("OK"));
         assertTrue(promise.isRejected());
 
-        Promise<String> result = promise.onThen(new Filter<Object, String>() {
+        Promise<String> result = promise.thenFilter(new Filter<Object, String>() {
             @Nullable
             @Override
             public String filter(@Nullable Object result) throws Exception {
@@ -417,7 +414,7 @@ public class APromiseInstrumentationTest {
     @Test
     public void testFilterThrow() throws Exception {
         Promise<String> promise = Promise.resolve("OK");
-        Promise<String> result = promise.onThen(new Filter<String, String>() {
+        Promise<String> result = promise.thenFilter(new Filter<String, String>() {
             @Nullable
             @Override
             public String filter(@Nullable String result) throws Exception {
@@ -430,10 +427,9 @@ public class APromiseInstrumentationTest {
 
     @Test
     public void testFilterNullCheck() throws Exception {
-        Filter<Object, String> fulfilled = null;
         try {
             //noinspection ConstantConditions
-            Promise.resolve(null).onThen(fulfilled);
+            Promise.resolve(null).thenFilter(null);
             fail();
         } catch (NullPointerException e) {
             // NOP
@@ -443,7 +439,7 @@ public class APromiseInstrumentationTest {
     @Test
     public void testPipeFulfillToFulfill() throws Exception {
         Promise<Character> promise = Promise.resolve('O');
-        Promise<String> result = promise.onThen(new Pipe<Character, String>() {
+        Promise<String> result = promise.thenPipe(new Pipe<Character, String>() {
             @Nullable
             @Override
             public Promise<String> pipe(Character result) throws Exception {
@@ -464,7 +460,7 @@ public class APromiseInstrumentationTest {
     @Test
     public void testPipeFulfillToReject() throws Exception {
         Promise<Character> promise = Promise.resolve('O');
-        Promise<String> result = promise.onThen(new Pipe<Character, String>() {
+        Promise<String> result = promise.thenPipe(new Pipe<Character, String>() {
             @Nullable
             @Override
             public Promise<String> pipe(Character result) throws Exception {
@@ -485,7 +481,7 @@ public class APromiseInstrumentationTest {
     @Test
     public void testPipeRejectToFulfill() throws Exception {
         Promise<Character> promise = Promise.reject(new Exception("O"));
-        Promise<String> result = promise.onThen(new Pipe<Character, String>() {
+        Promise<String> result = promise.thenPipe(new Pipe<Character, String>() {
             @Nullable
             @Override
             public Promise<String> pipe(Character result) throws Exception {
@@ -506,7 +502,7 @@ public class APromiseInstrumentationTest {
     @Test
     public void testPipeFulfillToNull() throws Exception {
         Promise<Character> promise = Promise.resolve(null);
-        Promise<String> result = promise.onThen(new Pipe<Character, String>() {
+        Promise<String> result = promise.thenPipe(new Pipe<Character, String>() {
             @Nullable
             @Override
             public Promise<String> pipe(Character result) throws Exception {
@@ -520,7 +516,7 @@ public class APromiseInstrumentationTest {
     @Test
     public void testPipeRejectToNull() throws Exception {
         Promise<Character> promise = Promise.reject(new Exception());
-        Promise<String> result = promise.onThen(new Pipe<Character, String>() {
+        Promise<String> result = promise.thenPipe(new Pipe<Character, String>() {
             @Nullable
             @Override
             public Promise<String> pipe(Character result) throws Exception {
@@ -541,7 +537,7 @@ public class APromiseInstrumentationTest {
     @Test
     public void testPipeThrow() throws Exception {
         Promise<Character> promise = Promise.resolve(null);
-        Promise<String> result = promise.onThen(new Pipe<Character, String>() {
+        Promise<String> result = promise.thenPipe(new Pipe<Character, String>() {
             @Nullable
             @Override
             public Promise<String> pipe(Character result) throws Exception {
@@ -554,11 +550,10 @@ public class APromiseInstrumentationTest {
 
     @Test
     public void testPipeNullCheck() throws Exception {
-        Pipe pipe = null;
         Promise<Object> promise = Promise.resolve(null);
         try {
             //noinspection ConstantConditions
-            promise.onThen(pipe);
+            promise.thenPipe(null);
             fail();
         } catch (NullPointerException e) {
             // NOP
@@ -567,7 +562,7 @@ public class APromiseInstrumentationTest {
 
     @Test
     public void testCatchCallbackWithFulfilled() throws Exception {
-        Promise<String> promise = Promise.resolve("OK").onCatch(new Callback<Exception>() {
+        Promise<String> promise = Promise.resolve("OK").catchCallback(new Callback<Exception>() {
             @Override
             public void callback(Exception result) throws Exception {
                 fail();
@@ -581,7 +576,7 @@ public class APromiseInstrumentationTest {
     @Test
     public void testCatchCallbackWithRejected() throws Exception {
         final StringBuilder builder = new StringBuilder();
-        Promise<Object> promise = Promise.reject(new Exception("OK")).onCatch(new Callback<Exception>() {
+        Promise<Object> promise = Promise.reject(new Exception("OK")).catchCallback(new Callback<Exception>() {
             @Override
             public void callback(Exception result) throws Exception {
                 builder.append(result.getMessage());
@@ -593,7 +588,7 @@ public class APromiseInstrumentationTest {
 
     @Test
     public void testCatchFilterWithFulfilled() throws Exception {
-        Promise<String> promise = Promise.resolve("OK").onCatch(new Filter<Exception, String>() {
+        Promise<String> promise = Promise.resolve("OK").catchFilter(new Filter<Exception, String>() {
             @Nullable
             @Override
             public String filter(@Nullable Exception result) throws Exception {
@@ -607,7 +602,7 @@ public class APromiseInstrumentationTest {
 
     @Test
     public void testCatchFilterWithRejected() throws Exception {
-        Promise<String> promise = Promise.reject(String.class, new Exception("O")).onCatch(new Filter<Exception, String>() {
+        Promise<String> promise = Promise.reject(String.class, new Exception("O")).catchFilter(new Filter<Exception, String>() {
             @Nullable
             @Override
             public String filter(Exception result) throws Exception {
@@ -620,7 +615,7 @@ public class APromiseInstrumentationTest {
 
     @Test
     public void testCatchPipeWithFulfilled() throws Exception {
-        Promise<String> promise = Promise.resolve("OK").onCatch(new Pipe<Exception, String>() {
+        Promise<String> promise = Promise.resolve("OK").catchPipe(new Pipe<Exception, String>() {
             @Nullable
             @Override
             public Promise<String> pipe(@Nullable Exception result) throws Exception {
@@ -634,7 +629,7 @@ public class APromiseInstrumentationTest {
 
     @Test
     public void testCatchPipeWithRejected() throws Exception {
-        Promise<String> promise = Promise.reject(String.class, new Exception("O")).onCatch(new Pipe<Exception, String>() {
+        Promise<String> promise = Promise.reject(String.class, new Exception("O")).catchPipe(new Pipe<Exception, String>() {
             @Nullable
             @Override
             public Promise<String> pipe(Exception result) throws Exception {
@@ -648,7 +643,7 @@ public class APromiseInstrumentationTest {
     @Test
     public void testFinallyCallback() throws Exception {
         final StringBuilder builder = new StringBuilder();
-        Promise<String> promise = Promise.resolve("OK").onFinally(new Callback<Promise<String>>() {
+        Promise<String> promise = Promise.resolve("OK").finallyCallback(new Callback<Promise<String>>() {
             @Override
             public void callback(Promise<String> result) throws Exception {
                 builder.append(result.getResult());
@@ -660,7 +655,7 @@ public class APromiseInstrumentationTest {
 
     @Test
     public void testFinallyCallbackThrow() throws Exception {
-        Promise<String> promise = Promise.resolve("NG").onFinally(new Callback<Promise<String>>() {
+        Promise<String> promise = Promise.resolve("NG").finallyCallback(new Callback<Promise<String>>() {
             @Override
             public void callback(Promise<String> result) throws Exception {
                 throw new Exception("OK");
@@ -672,7 +667,7 @@ public class APromiseInstrumentationTest {
 
     @Test
     public void testFinallyFilter() throws Exception {
-        Promise<String> promise = Promise.resolve('O').onFinally(new Filter<Promise<Character>, String>() {
+        Promise<String> promise = Promise.resolve('O').finallyFilter(new Filter<Promise<Character>, String>() {
             @Nullable
             @Override
             public String filter(Promise<Character> result) throws Exception {
@@ -685,7 +680,7 @@ public class APromiseInstrumentationTest {
 
     @Test
     public void testFinallyFilterThrow() throws Exception {
-        Promise<String> promise = Promise.resolve("NG").onFinally(new Filter<Promise<String>, String>() {
+        Promise<String> promise = Promise.resolve("NG").finallyFilter(new Filter<Promise<String>, String>() {
             @Nullable
             @Override
             public String filter(@Nullable Promise<String> result) throws Exception {
@@ -698,7 +693,7 @@ public class APromiseInstrumentationTest {
 
     @Test
     public void testFinallyPipe() throws Exception {
-        Promise<String> promise = Promise.resolve('O').onFinally(new Pipe<Promise<Character>, String>() {
+        Promise<String> promise = Promise.resolve('O').finallyPipe(new Pipe<Promise<Character>, String>() {
             @Nullable
             @Override
             public Promise<String> pipe(Promise<Character> result) throws Exception {
@@ -711,7 +706,7 @@ public class APromiseInstrumentationTest {
 
     @Test
     public void testFinallyPipeThrow() throws Exception {
-        Promise<String> promise = Promise.resolve("NG").onFinally(new Pipe<Promise<String>, String>() {
+        Promise<String> promise = Promise.resolve("NG").finallyPipe(new Pipe<Promise<String>, String>() {
             @Nullable
             @Override
             public Promise<String> pipe(@Nullable Promise<String> result) throws Exception {
