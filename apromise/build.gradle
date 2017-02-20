@@ -27,7 +27,7 @@ android {
 publish {
     groupId = 'jp.rubi3.apromise'
     artifactId = 'apromise'
-    publishVersion = '0.14.1'
+    publishVersion = '0.15.0'
     desc = 'A simple promise library.'
     licences = ['MIT']
     website = 'https://github.com/halmakey/APromise'

@@ -3,29 +3,42 @@ A simple promise library for android.
 
 Usage
 -----
-    new Promise<>(new Function<String>() {
-        @Override
-        public void function(Resolver<String> resolver) throws Exception {
-            resolver.fulfill("Hola!");
-        }
-    }).onThen(new Callback<String>() {
-        @Override
-        public void callback(String result) throws Exception {
-            Log.d(TAG, "callback: " + result);
-        }
-    });
+```Example.java
+Promise<String> hola = new Promise<>(new Function<String>() {
+    @Override
+    public void function(@NonNull Resolver<String> resolver) throws Exception {
+        resolver.fulfill("Hola!");
+    }
+}).thenCallback(new Callback<String>() {
+    @Override
+    public void callback(String result) throws Exception {
+        Log.d(TAG, "callback: " + result);
+    }
+});
 
-    Promise.resolve("Ciao").onThen(new Callback<String>() {
-        @Override
-        public void callback(String result) throws Exception {
-            throw new Exception("You can throw Exception at callback.");
-        }
-    }).onCatch(new Callback<Exception>() {
-        @Override
-        public void callback(Exception result) throws Exception {
-            Log.d(TAG, "callback: " + result);
-        }
-    });
+Promise<String> ciao = Promise.resolve("Ciao").thenCallback(new Callback<String>() {
+    @Override
+    public void callback(String result) throws Exception {
+        Log.d(TAG, "callback: " + result);
+        throw new Exception("You can throw Exception in callback.");
+    }
+}).catchPipe(new Pipe<Exception, String>() {
+    @Nullable
+    @Override
+    public Promise<String> pipe(@Nullable Exception result) throws Exception {
+        return Promise.resolve("Bonjour!");
+    }
+});
+
+Promise<List<String>> promise = Promise.all(Arrays.asList(hola, ciao));
+promise.finallyCallback(new Callback<Promise<List<String>>>() {
+    @Override
+    public void callback(Promise<List<String>> result) throws Exception {
+        List<String> hello = result.getResult();
+        Log.d(TAG, "callback: " + hello.toString());
+    }
+});
+```
 
 License
 -------
