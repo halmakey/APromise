@@ -17,10 +17,13 @@ import java.util.Arrays;
 import java.util.List;
 
 import jp.rubi3.apromise.Callback;
+import jp.rubi3.apromise.CallbackNonNull;
 import jp.rubi3.apromise.Filter;
+import jp.rubi3.apromise.FilterNonNull;
 import jp.rubi3.apromise.Function;
 import jp.rubi3.apromise.PendingException;
 import jp.rubi3.apromise.Pipe;
+import jp.rubi3.apromise.PipeNonNull;
 import jp.rubi3.apromise.Promise;
 import jp.rubi3.apromise.Resolver;
 
@@ -107,19 +110,20 @@ public class APromiseInstrumentationTest {
                 Log.d(TAG, "callback: " + result);
                 throw new Exception("You can throw Exception in callback.");
             }
-        }).catchPipe(new Pipe<Exception, String>() {
+        }).catchPipe(new PipeNonNull<Exception, String>() {
             @Nullable
             @Override
-            public Promise<String> pipe(@Nullable Exception result) throws Exception {
+            public Promise<String> pipe(@NonNull Exception result) throws Exception {
                 return Promise.resolve("Bonjour!");
             }
         });
 
         Promise<List<String>> promise = Promise.all(Arrays.asList(hola, ciao));
-        promise.finallyCallback(new Callback<Promise<List<String>>>() {
+        promise.finallyCallback(new CallbackNonNull<Promise<List<String>>>() {
             @Override
-            public void callback(Promise<List<String>> result) throws Exception {
+            public void callback(@NonNull Promise<List<String>> result) throws Exception {
                 List<String> hello = result.getResult();
+                //noinspection ConstantConditions
                 Log.d(TAG, "callback: " + hello.toString());
             }
         });
@@ -317,9 +321,9 @@ public class APromiseInstrumentationTest {
             public void callback(String result) throws Exception {
                 builder.append(result);
             }
-        }, new Callback<Exception>() {
+        }, new CallbackNonNull<Exception>() {
             @Override
-            public void callback(Exception result) throws Exception {
+            public void callback(@NonNull Exception result) throws Exception {
                 fail();
             }
         });
@@ -355,9 +359,9 @@ public class APromiseInstrumentationTest {
             public void callback(String result) throws Exception {
                 builder.append(result);
             }
-        }, new Callback<Exception>() {
+        }, new CallbackNonNull<Exception>() {
             @Override
-            public void callback(Exception result) throws Exception {
+            public void callback(@NonNull Exception result) throws Exception {
                 fail();
             }
         });
@@ -374,9 +378,9 @@ public class APromiseInstrumentationTest {
             public void callback(String result) throws Exception {
                 fail();
             }
-        }, new Callback<Exception>() {
+        }, new CallbackNonNull<Exception>() {
             @Override
-            public void callback(Exception result) throws Exception {
+            public void callback(@NonNull Exception result) throws Exception {
                 builder.append(result.getMessage());
             }
         });
@@ -418,10 +422,10 @@ public class APromiseInstrumentationTest {
                 }
                 return builder.toString();
             }
-        }, new Filter<Exception, String>() {
+        }, new FilterNonNull<Exception, String>() {
             @Nullable
             @Override
-            public String filter(@Nullable Exception result) throws Exception {
+            public String filter(@NonNull Exception result) throws Exception {
                 return "NG";
             }
         });
@@ -430,20 +434,20 @@ public class APromiseInstrumentationTest {
 
     @Test
     public void testFilterReject() throws Exception {
-        Promise<Object> promise = Promise.reject(new Exception("OK"));
+        Promise<Void> promise = Promise.reject(new Exception("OK"));
         assertTrue(promise.isRejected());
 
-        Promise<String> result = promise.thenFilter(new Filter<Object, String>() {
+        Promise<String> result = promise.thenFilter(new Filter<Void, String>() {
             @Nullable
             @Override
-            public String filter(@Nullable Object result) throws Exception {
+            public String filter(@Nullable Void result) throws Exception {
                 fail();
                 return null;
             }
-        }, new Filter<Exception, String>() {
+        }, new FilterNonNull<Exception, String>() {
             @Nullable
             @Override
-            public String filter(Exception result) throws Exception {
+            public String filter(@NonNull Exception result) throws Exception {
                 return result.getMessage();
             }
         });
@@ -484,10 +488,10 @@ public class APromiseInstrumentationTest {
             public Promise<String> pipe(Character result) throws Exception {
                 return Promise.resolve(result.toString() + "K");
             }
-        }, new Pipe<Exception, String>() {
+        }, new PipeNonNull<Exception, String>() {
             @Nullable
             @Override
-            public Promise<String> pipe(@Nullable Exception result) throws Exception {
+            public Promise<String> pipe(@NonNull Exception result) throws Exception {
                 fail();
                 return null;
             }
@@ -503,14 +507,14 @@ public class APromiseInstrumentationTest {
             @Nullable
             @Override
             public Promise<String> pipe(Character result) throws Exception {
-                return Promise.reject(new Exception(result.toString() + "K"));
+                return Promise.reject(String.class, new Exception(result.toString() + "K"));
             }
-        }, new Pipe<Exception, String>() {
+        }, new PipeNonNull<Exception, String>() {
             @Nullable
             @Override
-            public Promise<String> pipe(@Nullable Exception result) throws Exception {
+            public Promise<String> pipe(@NonNull Exception result) throws Exception {
                 fail();
-                return null;
+                return Promise.resolve(null);
             }
         });
         assertTrue(result.sync().isRejected());
@@ -519,7 +523,7 @@ public class APromiseInstrumentationTest {
 
     @Test
     public void testPipeRejectToFulfill() throws Exception {
-        Promise<Character> promise = Promise.reject(new Exception("O"));
+        Promise<Character> promise = Promise.reject(Character.class, new Exception("O"));
         Promise<String> result = promise.thenPipe(new Pipe<Character, String>() {
             @Nullable
             @Override
@@ -527,10 +531,10 @@ public class APromiseInstrumentationTest {
                 fail();
                 return null;
             }
-        }, new Pipe<Exception, String>() {
+        }, new PipeNonNull<Exception, String>() {
             @Nullable
             @Override
-            public Promise<String> pipe(Exception result) throws Exception {
+            public Promise<String> pipe(@NonNull Exception result) throws Exception {
                 return Promise.resolve(result.getMessage() + "K");
             }
         });
@@ -554,7 +558,7 @@ public class APromiseInstrumentationTest {
 
     @Test
     public void testPipeRejectToNull() throws Exception {
-        Promise<Character> promise = Promise.reject(new Exception());
+        Promise<Character> promise = Promise.reject(Character.class, new Exception());
         Promise<String> result = promise.thenPipe(new Pipe<Character, String>() {
             @Nullable
             @Override
@@ -562,10 +566,10 @@ public class APromiseInstrumentationTest {
                 fail();
                 return null;
             }
-        }, new Pipe<Exception, String>() {
+        }, new PipeNonNull<Exception, String>() {
             @Nullable
             @Override
-            public Promise<String> pipe(Exception result) throws Exception {
+            public Promise<String> pipe(@NonNull Exception result) throws Exception {
                 return null;
             }
         });
@@ -601,9 +605,9 @@ public class APromiseInstrumentationTest {
 
     @Test
     public void testCatchCallbackWithFulfilled() throws Exception {
-        Promise<String> promise = Promise.resolve("OK").catchCallback(new Callback<Exception>() {
+        Promise<String> promise = Promise.resolve("OK").catchCallback(new CallbackNonNull<Exception>() {
             @Override
-            public void callback(Exception result) throws Exception {
+            public void callback(@NonNull Exception result) throws Exception {
                 fail();
                 throw new Exception("NG");
             }
@@ -615,9 +619,9 @@ public class APromiseInstrumentationTest {
     @Test
     public void testCatchCallbackWithRejected() throws Exception {
         final StringBuilder builder = new StringBuilder();
-        Promise<Object> promise = Promise.reject(new Exception("OK")).catchCallback(new Callback<Exception>() {
+        Promise<Void> promise = Promise.reject(new Exception("OK")).catchCallback(new CallbackNonNull<Exception>() {
             @Override
-            public void callback(Exception result) throws Exception {
+            public void callback(@NonNull Exception result) throws Exception {
                 builder.append(result.getMessage());
             }
         });
@@ -627,10 +631,10 @@ public class APromiseInstrumentationTest {
 
     @Test
     public void testCatchFilterWithFulfilled() throws Exception {
-        Promise<String> promise = Promise.resolve("OK").catchFilter(new Filter<Exception, String>() {
+        Promise<String> promise = Promise.resolve("OK").catchFilter(new FilterNonNull<Exception, String>() {
             @Nullable
             @Override
-            public String filter(@Nullable Exception result) throws Exception {
+            public String filter(@NonNull Exception result) throws Exception {
                 fail();
                 return "NG";
             }
@@ -641,10 +645,10 @@ public class APromiseInstrumentationTest {
 
     @Test
     public void testCatchFilterWithRejected() throws Exception {
-        Promise<String> promise = Promise.reject(String.class, new Exception("O")).catchFilter(new Filter<Exception, String>() {
+        Promise<String> promise = Promise.reject(String.class, new Exception("O")).catchFilter(new FilterNonNull<Exception, String>() {
             @Nullable
             @Override
-            public String filter(Exception result) throws Exception {
+            public String filter(@NonNull Exception result) throws Exception {
                 return result.getMessage() + "K";
             }
         });
@@ -654,10 +658,10 @@ public class APromiseInstrumentationTest {
 
     @Test
     public void testCatchPipeWithFulfilled() throws Exception {
-        Promise<String> promise = Promise.resolve("OK").catchPipe(new Pipe<Exception, String>() {
+        Promise<String> promise = Promise.resolve("OK").catchPipe(new PipeNonNull<Exception, String>() {
             @Nullable
             @Override
-            public Promise<String> pipe(@Nullable Exception result) throws Exception {
+            public Promise<String> pipe(@NonNull Exception result) throws Exception {
                 fail();
                 return Promise.resolve("NG");
             }
@@ -668,10 +672,10 @@ public class APromiseInstrumentationTest {
 
     @Test
     public void testCatchPipeWithRejected() throws Exception {
-        Promise<String> promise = Promise.reject(String.class, new Exception("O")).catchPipe(new Pipe<Exception, String>() {
+        Promise<String> promise = Promise.reject(String.class, new Exception("O")).catchPipe(new PipeNonNull<Exception, String>() {
             @Nullable
             @Override
-            public Promise<String> pipe(Exception result) throws Exception {
+            public Promise<String> pipe(@NonNull Exception result) throws Exception {
                 return Promise.resolve(result.getMessage() + "K");
             }
         });
@@ -682,9 +686,9 @@ public class APromiseInstrumentationTest {
     @Test
     public void testFinallyCallback() throws Exception {
         final StringBuilder builder = new StringBuilder();
-        Promise<String> promise = Promise.resolve("OK").finallyCallback(new Callback<Promise<String>>() {
+        Promise<String> promise = Promise.resolve("OK").finallyCallback(new CallbackNonNull<Promise<String>>() {
             @Override
-            public void callback(Promise<String> result) throws Exception {
+            public void callback(@NonNull Promise<String> result) throws Exception {
                 builder.append(result.getResult());
             }
         });
@@ -694,9 +698,9 @@ public class APromiseInstrumentationTest {
 
     @Test
     public void testFinallyCallbackThrow() throws Exception {
-        Promise<String> promise = Promise.resolve("NG").finallyCallback(new Callback<Promise<String>>() {
+        Promise<String> promise = Promise.resolve("NG").finallyCallback(new CallbackNonNull<Promise<String>>() {
             @Override
-            public void callback(Promise<String> result) throws Exception {
+            public void callback(@NonNull Promise<String> result) throws Exception {
                 throw new Exception("OK");
             }
         });
@@ -706,10 +710,10 @@ public class APromiseInstrumentationTest {
 
     @Test
     public void testFinallyFilter() throws Exception {
-        Promise<String> promise = Promise.resolve('O').finallyFilter(new Filter<Promise<Character>, String>() {
+        Promise<String> promise = Promise.resolve('O').finallyFilter(new FilterNonNull<Promise<Character>, String>() {
             @Nullable
             @Override
-            public String filter(Promise<Character> result) throws Exception {
+            public String filter(@NonNull Promise<Character> result) throws Exception {
                 return String.valueOf(result.getResult()) + "K";
             }
         });
@@ -719,10 +723,10 @@ public class APromiseInstrumentationTest {
 
     @Test
     public void testFinallyFilterThrow() throws Exception {
-        Promise<String> promise = Promise.resolve("NG").finallyFilter(new Filter<Promise<String>, String>() {
+        Promise<String> promise = Promise.resolve("NG").finallyFilter(new FilterNonNull<Promise<String>, String>() {
             @Nullable
             @Override
-            public String filter(@Nullable Promise<String> result) throws Exception {
+            public String filter(@NonNull Promise<String> result) throws Exception {
                 throw new Exception("OK");
             }
         });
@@ -732,11 +736,11 @@ public class APromiseInstrumentationTest {
 
     @Test
     public void testFinallyPipe() throws Exception {
-        Promise<String> promise = Promise.resolve('O').finallyPipe(new Pipe<Promise<Character>, String>() {
+        Promise<String> promise = Promise.resolve('O').finallyPipe(new PipeNonNull<Promise<Character>, String>() {
             @Nullable
             @Override
-            public Promise<String> pipe(Promise<Character> result) throws Exception {
-                return Promise.reject(new Exception(String.valueOf(result.getResult()) + "K"));
+            public Promise<String> pipe(@NonNull Promise<Character> result) throws Exception {
+                return Promise.reject(String.class, new Exception(String.valueOf(result.getResult()) + "K"));
             }
         });
         assertTrue(promise.sync().isRejected());
@@ -745,10 +749,10 @@ public class APromiseInstrumentationTest {
 
     @Test
     public void testFinallyPipeThrow() throws Exception {
-        Promise<String> promise = Promise.resolve("NG").finallyPipe(new Pipe<Promise<String>, String>() {
+        Promise<String> promise = Promise.resolve("NG").finallyPipe(new PipeNonNull<Promise<String>, String>() {
             @Nullable
             @Override
-            public Promise<String> pipe(@Nullable Promise<String> result) throws Exception {
+            public Promise<String> pipe(@NonNull Promise<String> result) throws Exception {
                 throw new Exception("OK");
             }
         });

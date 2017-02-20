@@ -22,19 +22,20 @@ Promise<String> ciao = Promise.resolve("Ciao").thenCallback(new Callback<String>
         Log.d(TAG, "callback: " + result);
         throw new Exception("You can throw Exception in callback.");
     }
-}).catchPipe(new Pipe<Exception, String>() {
+}).catchPipe(new PipeNonNull<Exception, String>() {
     @Nullable
     @Override
-    public Promise<String> pipe(@Nullable Exception result) throws Exception {
+    public Promise<String> pipe(@NonNull Exception result) throws Exception {
         return Promise.resolve("Bonjour!");
     }
 });
 
 Promise<List<String>> promise = Promise.all(Arrays.asList(hola, ciao));
-promise.finallyCallback(new Callback<Promise<List<String>>>() {
+promise.finallyCallback(new CallbackNonNull<Promise<List<String>>>() {
     @Override
-    public void callback(Promise<List<String>> result) throws Exception {
+    public void callback(@NonNull Promise<List<String>> result) throws Exception {
         List<String> hello = result.getResult();
+        //noinspection ConstantConditions
         Log.d(TAG, "callback: " + hello.toString());
     }
 });
