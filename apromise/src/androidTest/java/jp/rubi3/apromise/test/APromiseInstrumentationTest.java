@@ -372,7 +372,7 @@ public class APromiseInstrumentationTest {
     @Test
     public void testCallbackReject() throws Exception {
         final StringBuilder builder = new StringBuilder();
-        Promise<String> promise = Promise.reject(String.class, new Exception("OK"));
+        Promise<String> promise = Promise.reject(new Exception("OK"), String.class);
         Promise<String> result = promise.thenCallback(new Callback<String>() {
             @Override
             public void callback(String result) throws Exception {
@@ -507,7 +507,7 @@ public class APromiseInstrumentationTest {
             @Nullable
             @Override
             public Promise<String> pipe(Character result) throws Exception {
-                return Promise.reject(String.class, new Exception(result.toString() + "K"));
+                return Promise.reject(new Exception(result.toString() + "K"), String.class);
             }
         }, new PipeNonNull<Exception, String>() {
             @Nullable
@@ -523,7 +523,7 @@ public class APromiseInstrumentationTest {
 
     @Test
     public void testPipeRejectToFulfill() throws Exception {
-        Promise<Character> promise = Promise.reject(Character.class, new Exception("O"));
+        Promise<Character> promise = Promise.reject(new Exception("O"), Character.class);
         Promise<String> result = promise.thenPipe(new Pipe<Character, String>() {
             @Nullable
             @Override
@@ -558,7 +558,7 @@ public class APromiseInstrumentationTest {
 
     @Test
     public void testPipeRejectToNull() throws Exception {
-        Promise<Character> promise = Promise.reject(Character.class, new Exception());
+        Promise<Character> promise = Promise.reject(new Exception(), Character.class);
         Promise<String> result = promise.thenPipe(new Pipe<Character, String>() {
             @Nullable
             @Override
@@ -645,7 +645,7 @@ public class APromiseInstrumentationTest {
 
     @Test
     public void testCatchFilterWithRejected() throws Exception {
-        Promise<String> promise = Promise.reject(String.class, new Exception("O")).catchFilter(new FilterNonNull<Exception, String>() {
+        Promise<String> promise = Promise.reject(new Exception("O"), String.class).catchFilter(new FilterNonNull<Exception, String>() {
             @Nullable
             @Override
             public String filter(@NonNull Exception result) throws Exception {
@@ -672,7 +672,7 @@ public class APromiseInstrumentationTest {
 
     @Test
     public void testCatchPipeWithRejected() throws Exception {
-        Promise<String> promise = Promise.reject(String.class, new Exception("O")).catchPipe(new PipeNonNull<Exception, String>() {
+        Promise<String> promise = Promise.reject(new Exception("O"), String.class).catchPipe(new PipeNonNull<Exception, String>() {
             @Nullable
             @Override
             public Promise<String> pipe(@NonNull Exception result) throws Exception {
@@ -740,7 +740,7 @@ public class APromiseInstrumentationTest {
             @Nullable
             @Override
             public Promise<String> pipe(@NonNull Promise<Character> result) throws Exception {
-                return Promise.reject(String.class, new Exception(String.valueOf(result.getResult()) + "K"));
+                return Promise.reject(new Exception(String.valueOf(result.getResult()) + "K"), String.class);
             }
         });
         assertTrue(promise.sync().isRejected());
