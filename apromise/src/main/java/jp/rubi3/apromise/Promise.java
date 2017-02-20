@@ -40,8 +40,8 @@ public final class Promise<D> {
      * @return returns promise rejected with exception or NullPointerException if exception is null.
      */
     @NonNull
-    public static <F> Promise<F> reject(@Nullable final Exception exception) {
-        return new Promise<F>(getLooper()).doReject(exception);
+    public static Promise<Void> reject(@Nullable final Exception exception) {
+        return new Promise<Void>(getLooper()).doReject(exception);
     }
 
     /**
@@ -236,7 +236,7 @@ public final class Promise<D> {
     }
 
     @NonNull
-    public Promise<D> thenCallback(@Nullable final Callback<D> fulfilled, @Nullable final Callback<Exception> rejected) {
+    public Promise<D> thenCallback(@Nullable final Callback<D> fulfilled, @Nullable final CallbackNonNull<Exception> rejected) {
         final Promise<D> promise = new Promise<>(handler.getLooper());
         chain(new Chain<D>() {
             @Override
@@ -262,7 +262,7 @@ public final class Promise<D> {
     }
 
     @NonNull
-    public <N> Promise<N> thenFilter(@NonNull final Filter<D, N> fulfilled, @Nullable final Filter<Exception, N> rejected) {
+    public <N> Promise<N> thenFilter(@NonNull final Filter<D, N> fulfilled, @Nullable final FilterNonNull<Exception, N> rejected) {
         assertNonNull("fulfilled should be not null.", fulfilled);
         final Promise<N> promise = new Promise<>(handler.getLooper());
         chain(new Chain<D>() {
@@ -292,7 +292,7 @@ public final class Promise<D> {
     }
 
     @NonNull
-    public <N> Promise<N> thenPipe(@NonNull final Pipe<D, N> fulfilled, @Nullable final Pipe<Exception, N> rejected) {
+    public <N> Promise<N> thenPipe(@NonNull final Pipe<D, N> fulfilled, @Nullable final PipeNonNull<Exception, N> rejected) {
         assertNonNull("fulfilled should be not null.", fulfilled);
         final Promise<N> promise = new Promise<>(handler.getLooper());
         chain(new Chain<D>() {
@@ -325,12 +325,12 @@ public final class Promise<D> {
     }
 
     @NonNull
-    public Promise<D> catchCallback(@Nullable final Callback<Exception> rejected) {
+    public Promise<D> catchCallback(@Nullable final CallbackNonNull<Exception> rejected) {
         return thenCallback(null, rejected);
     }
 
     @NonNull
-    public Promise<D> catchFilter(@Nullable final Filter<Exception, D> rejected) {
+    public Promise<D> catchFilter(@Nullable final FilterNonNull<Exception, D> rejected) {
         return thenFilter(new Filter<D, D>() {
             @Nullable
             @Override
@@ -341,7 +341,7 @@ public final class Promise<D> {
     }
 
     @NonNull
-    public Promise<D> catchPipe(@Nullable final Pipe<Exception, D> rejected) {
+    public Promise<D> catchPipe(@Nullable final PipeNonNull<Exception, D> rejected) {
         return thenPipe(new Pipe<D, D>() {
             @NonNull
             @Override
@@ -352,7 +352,7 @@ public final class Promise<D> {
     }
 
     @NonNull
-    public Promise<D> finallyCallback(@Nullable final Callback<Promise<D>> callback) {
+    public Promise<D> finallyCallback(@Nullable final CallbackNonNull<Promise<D>> callback) {
         final Promise<D> promise = new Promise<>(handler.getLooper());
         chain(new Chain<D>() {
             @Override
@@ -371,7 +371,7 @@ public final class Promise<D> {
     }
 
     @NonNull
-    public <N> Promise<N> finallyFilter(@NonNull final Filter<Promise<D>, N> filter) {
+    public <N> Promise<N> finallyFilter(@NonNull final FilterNonNull<Promise<D>, N> filter) {
         assertNonNull("filter should be not null.", filter);
         final Promise<N> promise = new Promise<>(handler.getLooper());
         chain(new Chain<D>() {
@@ -388,7 +388,7 @@ public final class Promise<D> {
     }
 
     @NonNull
-    public <N> Promise<N> finallyPipe(@NonNull final Pipe<Promise<D>, N> pipe) {
+    public <N> Promise<N> finallyPipe(@NonNull final PipeNonNull<Promise<D>, N> pipe) {
         assertNonNull("Pipe should be not null.", pipe);
         final Promise<N> promise = new Promise<>(handler.getLooper());
         chain(new Chain<D>() {
@@ -414,11 +414,9 @@ public final class Promise<D> {
         return promise;
     }
 
-    private static void assertNonNull(String message, Object... objects) {
-        for (Object one : objects) {
-            if (one == null) {
-                throw new NullPointerException(message);
-            }
+    private static void assertNonNull(String message, Object object) {
+        if (object == null) {
+            throw new NullPointerException(message);
         }
     }
 
