@@ -53,7 +53,8 @@ public final class Promise<D> {
      * @return returns promise rejected with exception or NullPointerException if exception is null.
      */
     @NonNull
-    public static <D> Promise<D> reject(@SuppressWarnings("UnusedParameters") Class<D> clazz, @Nullable final Exception exception) {
+    public static <D> Promise<D> reject(@Nullable final Exception exception, @NonNull Class<D> clazz) {
+        assertNonNull("clazz should not be null.", clazz);
         return new Promise<D>(getLooper()).doReject(exception);
     }
 
