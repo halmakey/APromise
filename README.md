@@ -1,4 +1,6 @@
 # APromise
+[ ![Download](https://api.bintray.com/packages/halmakey/maven/apromise/images/download.svg) ](https://bintray.com/halmakey/maven/apromise/_latestVersion)
+
 A simple promise library for android.
 
 Install
