@@ -1,5 +1,7 @@
 package jp.rubi3.apromise;
 
+import android.support.annotation.Nullable;
+
 /**
  *
  * Callback
@@ -13,5 +15,5 @@ public interface Callback<D> {
      * @param result previous result
      * @throws Exception to reject
      */
-    void callback(D result) throws Exception;
+    void callback(@Nullable D result) throws Exception;
 }

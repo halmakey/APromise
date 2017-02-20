@@ -1,5 +1,7 @@
 package jp.rubi3.apromise;
 
+import android.support.annotation.NonNull;
+
 /**
  *
  * Function
@@ -13,5 +15,5 @@ public interface Function<D> {
      * @param resolver Resolver
      * @throws Exception will cause reject Promise.
      */
-    void function(Resolver<D> resolver) throws Exception;
+    void function(@NonNull Resolver<D> resolver) throws Exception;
 }
