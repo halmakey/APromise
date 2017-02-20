@@ -3,6 +3,7 @@ package jp.rubi3.apromise.test;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.test.runner.AndroidJUnit4;
 import android.util.Log;
@@ -52,7 +53,7 @@ public class APromiseInstrumentationTest {
     private <F> Promise<F> delayedResolve(final F result, final long delayMillis) {
         return new Promise<>(new Function<F>() {
             @Override
-            public void function(final Resolver<F> resolver) throws Exception {
+            public void function(@NonNull final Resolver<F> resolver) throws Exception {
                 handler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
@@ -66,7 +67,7 @@ public class APromiseInstrumentationTest {
     private <F> Promise<F> delayedReject(final Exception exception, final long delayMillis) {
         return new Promise<>(new Function<F>() {
             @Override
-            public void function(final Resolver<F> resolver) throws Exception {
+            public void function(@NonNull final Resolver<F> resolver) throws Exception {
                 handler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
@@ -84,6 +85,44 @@ public class APromiseInstrumentationTest {
         } catch (Exception e) {
             return e;
         }
+    }
+
+    @Test
+    public void testExample() throws Exception {
+        Promise<String> hola = new Promise<>(new Function<String>() {
+            @Override
+            public void function(@NonNull Resolver<String> resolver) throws Exception {
+                resolver.fulfill("Hola!");
+            }
+        }).thenCallback(new Callback<String>() {
+            @Override
+            public void callback(String result) throws Exception {
+                Log.d(TAG, "callback: " + result);
+            }
+        });
+
+        Promise<String> ciao = Promise.resolve("Ciao").thenCallback(new Callback<String>() {
+            @Override
+            public void callback(String result) throws Exception {
+                Log.d(TAG, "callback: " + result);
+                throw new Exception("You can throw Exception in callback.");
+            }
+        }).catchPipe(new Pipe<Exception, String>() {
+            @Nullable
+            @Override
+            public Promise<String> pipe(@Nullable Exception result) throws Exception {
+                return Promise.resolve("Bonjour!");
+            }
+        });
+
+        Promise<List<String>> promise = Promise.all(Arrays.asList(hola, ciao));
+        promise.finallyCallback(new Callback<Promise<List<String>>>() {
+            @Override
+            public void callback(Promise<List<String>> result) throws Exception {
+                List<String> hello = result.getResult();
+                Log.d(TAG, "callback: " + hello.toString());
+            }
+        });
     }
 
     @Test
@@ -108,7 +147,7 @@ public class APromiseInstrumentationTest {
     public void testFunctionResolve() throws Exception {
         assertEquals("OK", new Promise<>(new Function<String>() {
             @Override
-            public void function(Resolver<String> resolver) throws Exception {
+            public void function(@NonNull Resolver<String> resolver) throws Exception {
                 resolver.fulfill("OK");
                 resolver.reject(new Exception("NG")); // it will be ignored.
             }
@@ -119,7 +158,7 @@ public class APromiseInstrumentationTest {
     public void testFunctionRejectByResolver() throws Exception {
         Promise<String> promise = new Promise<>(new Function<String>() {
             @Override
-            public void function(Resolver<String> resolver) throws Exception {
+            public void function(@NonNull Resolver<String> resolver) throws Exception {
                 resolver.reject(new Exception("OK"));
             }
         });
@@ -131,7 +170,7 @@ public class APromiseInstrumentationTest {
     public void testFunctionRejectByThrow() throws Exception {
         Promise<String> promise = new Promise<>(new Function<String>() {
             @Override
-            public void function(Resolver<String> resolver) throws Exception {
+            public void function(@NonNull Resolver<String> resolver) throws Exception {
                 throw new Exception("OK");
             }
         });
@@ -183,7 +222,7 @@ public class APromiseInstrumentationTest {
 
         String string = new Promise<>(handlerThread.getLooper(), new Function<String>() {
             @Override
-            public void function(Resolver<String> resolver) throws Exception {
+            public void function(@NonNull Resolver<String> resolver) throws Exception {
                 assertEquals(handlerThread.getLooper(), Looper.myLooper());
                 resolver.fulfill("OK");
             }
@@ -207,7 +246,7 @@ public class APromiseInstrumentationTest {
             final int finalI = i;
             promises.add(new Promise<>(new Function<Integer>() {
                 @Override
-                public void function(final Resolver<Integer> resolver) throws Exception {
+                public void function(@NonNull final Resolver<Integer> resolver) throws Exception {
                     handler.postDelayed(new Runnable() {
                         @Override
                         public void run() {
@@ -232,7 +271,7 @@ public class APromiseInstrumentationTest {
             final int finalI = i;
             promises.add(new Promise<>(new Function<Integer>() {
                 @Override
-                public void function(final Resolver<Integer> resolver) throws Exception {
+                public void function(@NonNull final Resolver<Integer> resolver) throws Exception {
                     handler.postDelayed(new Runnable() {
                         @Override
                         public void run() {
@@ -243,7 +282,7 @@ public class APromiseInstrumentationTest {
             }));
             promises.add(new Promise<>(new Function<Integer>() {
                 @Override
-                public void function(final Resolver<Integer> resolver) throws Exception {
+                public void function(@NonNull final Resolver<Integer> resolver) throws Exception {
                     handler.postDelayed(new Runnable() {
                         @Override
                         public void run() {
@@ -715,5 +754,13 @@ public class APromiseInstrumentationTest {
         });
         assertTrue(promise.sync().isRejected());
         assertEquals("OK", getException(promise).getMessage());
+    }
+
+    @Test
+    public void testPendingException() throws Exception {
+        Promise<String> promise = Promise.resolve("OK");
+        PendingException exception = new PendingException(promise);
+        assertNotNull(exception.getPromise());
+        assertEquals("OK", exception.getPromise().getResult());
     }
 }
