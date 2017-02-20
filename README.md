@@ -1,6 +1,14 @@
 # APromise
 A simple promise library for android.
 
+Install
+-------
+```build.gradle
+dependencies {
+    compile 'jp.rubi3.apromise:apromise:0.15.0'
+}
+```
+
 Usage
 -----
 ```Example.java
